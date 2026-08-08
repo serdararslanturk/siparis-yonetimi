@@ -1,0 +1,43 @@
+## ── Derleme çıktıları (asla commit edilmez) ──
+bin/
+obj/
+publish/
+[Dd]ebug/
+[Rr]elease/
+*.dll
+*.pdb
+
+## ── Gizli / hassas dosyalar (ASLA GitHub'a girmemeli) ──
+appsettings.Production.json
+appsettings.*.Local.json
+appsettings.Local.json
+*.pfx
+*.publishsettings
+keys/
+*.key
+
+## ── Loglar ──
+logs/
+*.log
+
+## ── Test çıktıları ──
+tests/**/bin/
+tests/**/obj/
+tests/LogicParity/*-results.json
+
+## ── Editör / IDE ──
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+## ── İşletim sistemi ──
+Thumbs.db
+.DS_Store
+
+## ── Geçici ──
+*.eski
+*.bak
+*.tmp
+~$*

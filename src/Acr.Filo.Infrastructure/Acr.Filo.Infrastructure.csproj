@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Acr.Filo.Application\Acr.Filo.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- Tam ASP.NET Core Identity DEĞİL, yalnızca parola hash'leyicisi.
+         Gerekçe: Identity 7 tablo getirir (AspNetUsers...), şemamızla çakışır ve
+         3 rollük bir uygulama için gereksiz. PasswordHasher<T> ise PBKDF2-HMAC-SHA256
+         100.000 tur ile sınanmış bir bileşen; onu tek başına kullanıyoruz. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
+  </ItemGroup>
+</Project>

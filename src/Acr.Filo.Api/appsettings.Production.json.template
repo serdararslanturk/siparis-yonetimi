@@ -1,0 +1,57 @@
+{
+  "//": "==================================================================",
+  "//1": "BU BIR SABLONDUR. Sunucuda appsettings.Production.json olarak",
+  "//2": "kopyalanip doldurulur. GIT'E ASLA EKLENMEZ (.gitignore'da).",
+  "//3": "Tercih edilen yontem SIRASIYLA:",
+  "//4": "  1) Windows Authentication + AppPool Identity  <-- EN GUVENLI",
+  "//5": "     Parola hic olmaz; sizmasi mumkun degil.",
+  "//6": "  2) Environment variable (IIS Configuration Editor)",
+  "//7": "  3) Bu dosya (NTFS izni: sadece AppPool Identity okuyabilir)",
+  "//8": "==================================================================",
+
+  "ConnectionStrings": {
+    "//SecenekA_WindowsAuth": "Server=[SQL_SERVER_ADI]\\[INSTANCE_ADI];Database=[DATABASE_ADI];Integrated Security=true;Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=False;Connect Timeout=15",
+    "//SecenekB_SqlAuth": "Server=[SQL_SERVER_ADI]\\[INSTANCE_ADI];Database=[DATABASE_ADI];User Id=[SQL_KULLANICI_ADI];Password=[GUVENLI_PAROLA];Encrypt=True;TrustServerCertificate=False;MultipleActiveResultSets=False;Connect Timeout=15",
+    "FiloDb": "[YUKARIDAKI IKI SECENEKTEN BIRINI BURAYA KOPYALAYIN]"
+  },
+
+  "//Encrypt": "Encrypt=True zorunlu tutuldu. TrustServerCertificate=True YAPMAYIN:",
+  "//Encrypt2": "sertifika dogrulamasini kapatir, ortadaki adam saldirisina acik birakir.",
+  "//Encrypt3": "SQL sunucusunda gecerli sertifika yoksa cozum sertifikayi duzeltmektir.",
+
+  "Jwt": {
+    "Issuer": "acr-filo",
+    "Audience": "acr-filo-web",
+    "//SigningKey": "En az 32 BYTE rastgele. Uretmek icin:",
+    "//SigningKey2": "  [Convert]::ToBase64String((1..48 | %{Get-Random -Max 256}))",
+    "//SigningKey3": "Tercihen bu dosya yerine ENV: Jwt__SigningKey",
+    "SigningKey": "[JWT_IMZA_ANAHTARI_EN_AZ_32_BYTE]",
+    "AccessTokenMinutes": 15,
+    "RefreshTokenDays": 14
+  },
+
+  "Cors": {
+    "//": "Sadece frontend'in gercek adresi. '*' KULLANMAYIN.",
+    "//2": "Frontend ve API ayni IIS sitesindeyse bu liste BOS kalmali.",
+    "AllowedOrigins": [ "https://[UYGULAMA_DOMAINI]" ]
+  },
+
+  "Serilog": {
+    "MinimumLevel": { "Default": "Warning", "Override": { "Acr.Filo": "Information" } },
+    "WriteTo": [
+      {
+        "Name": "File",
+        "Args": {
+          "path": "[IIS_FIZIKSEL_KLASORU]\\logs\\filo-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 30,
+          "fileSizeLimitBytes": 52428800,
+          "rollOnFileSizeLimit": true
+        }
+      }
+    ]
+  },
+
+  "Swagger": { "Enabled": false },
+  "//Swagger": "Production'da KAPALI. Acmak gerekirse users.manage yetkisi arkasina alin."
+}

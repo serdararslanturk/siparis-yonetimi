@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>ACR Filo Sipariş Yönetim Sistemi</title>
+<style>
+  :root{
+    --bg:#F5F4F0; --surface:#FFFFFF; --surface-2:#FBFAF7;
+    --ink:#20262B; --ink-muted:#6B7178; --border:#E3E1D9;
+    --accent:#2F5D57; --accent-ink:#FFFFFF;
+    --red:#C1443C; --red-bg:#FBEAE8;
+    --amber:#B4791E; --amber-bg:#FBF1DF;
+    --green:#3C7A5D; --green-bg:#E7F2EC;
+    --blue:#2E5F8A; --blue-bg:#E7EFF6;
+    --gray:#8B8880; --gray-bg:#EFEDE7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181B1D; --surface:#212527; --surface-2:#25292B;
+      --ink:#EDECE8; --ink-muted:#9A9890; --border:#33373A;
+      --red-bg:#3A2320; --amber-bg:#392C16; --green-bg:#1D2E26; --blue-bg:#1B2733; --gray-bg:#2A2C2C;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  #app{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;}
+  .topbar h1{font-size:21px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+  .topbar .actions{display:flex;gap:10px;}
+  .subtitle{color:var(--ink-muted);font-size:13px;margin:0 0 20px;}
+  button{font-family:var(--sans);cursor:pointer;border:none;border-radius:7px;font-size:13px;font-weight:500;padding:9px 14px;}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{opacity:.92;}
+  .btn-ghost{background:transparent;color:var(--ink-muted);border:1px solid var(--border);}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--ink-muted);}
+  .btn-sm{padding:5px 10px;font-size:12px;border-radius:6px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-muted);margin-bottom:20px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .layout{display:flex;flex-direction:column;gap:18px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;}
+  .order-list{padding:6px;max-height:70vh;overflow:auto;}
+  .filter-bar{padding:12px 12px 8px;border-bottom:1px solid var(--border);}
+  .filter-bar input[type=text]{margin-bottom:0;}
+  .panel-header{font-size:12px;font-weight:600;color:var(--ink-muted);padding:12px 12px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between;}
+  .list-count{font-size:11px;color:var(--ink-muted);font-weight:400;text-transform:none;letter-spacing:normal;}
+  .tabs{display:flex;gap:4px;padding:0 10px;border-bottom:1px solid var(--border);}
+  .tab-btn{background:none;border:none;padding:11px 14px;font-size:13px;font-weight:600;color:var(--ink-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-count{font-weight:400;color:var(--ink-muted);font-size:11px;margin-left:2px;}
+  .order-card{padding:13px 12px;border-radius:9px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;}
+  .order-card:hover{background:var(--surface-2);}
+  .order-card.active{background:var(--green-bg);border-color:var(--green);}
+  .order-card .name{font-weight:600;font-size:14px;margin-bottom:3px;}
+  .order-card .meta{font-size:12px;color:var(--ink-muted);}
+  .partial-delivery{font-size:11.5px;color:var(--blue);font-weight:600;margin-top:4px;}
+  .ikame-summary{font-size:11.5px;color:var(--amber);font-weight:600;margin-top:4px;}
+  .ikame-summary.ikame-returned{color:var(--green);}
+  .ikame-tag{color:var(--amber);font-weight:600;}
+  .ikame-tag.ikame-returned{color:var(--green);}
+  .card-summary{margin-top:8px;padding:8px 9px;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;}
+  .ssh-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+  .ssh-chip{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--gray-bg);color:var(--gray);}
+  .ssh-chip.done{background:var(--green-bg);color:var(--green);}
+  .ssh-chip.partial{background:var(--amber-bg);color:var(--amber);}
+  .ssh-chip.ready{background:var(--blue-bg);color:var(--blue);font-size:11.5px;padding:3px 9px;}
+  .kalan-borc{font-size:11.5px;color:var(--ink-muted);}
+  .open-counts{display:flex;gap:14px;font-size:11.5px;color:var(--ink-muted);margin-top:4px;}
+  .missing-text{color:var(--amber);font-weight:600;}
+  .kalan-borc.debt{color:var(--red);}
+  .kalan-borc.clear{color:var(--green);}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;margin-top:7px;}
+  .pay-rows{margin-top:6px;display:flex;flex-direction:column;gap:3px;}
+  .pay-rows.delivery-rows{margin-top:8px;padding-top:6px;border-top:1px dashed var(--border);}
+  .pay-row{font-size:11px;color:var(--ink-muted);display:flex;align-items:center;gap:6px;}
+  .pay-row strong{color:var(--ink);font-weight:700;}
+  .main-veh-row{cursor:pointer;padding:4px 6px;border-radius:5px;}
+  .main-veh-row:hover{background:var(--surface-2);}
+  .main-veh-row.expanded{background:var(--surface-2);font-weight:600;color:var(--ink);}
+  .pay-row .dot{flex-shrink:0;}
+  .b-red{background:var(--red-bg);color:var(--red);}
+  .b-amber{background:var(--amber-bg);color:var(--amber);}
+  .b-green{background:var(--green-bg);color:var(--green);}
+  .b-blue{background:var(--blue-bg);color:var(--blue);}
+  .b-gray{background:var(--gray-bg);color:var(--gray);}
+  .empty{padding:60px 20px;text-align:center;color:var(--ink-muted);font-size:13px;}
+  .detail{padding:22px;}
+  .detail h2{font-size:17px;margin:0 0 2px;}
+  .detail .sub{color:var(--ink-muted);font-size:12px;margin-bottom:18px;}
+  .detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .btn-danger{color:var(--red);border-color:var(--red-bg);}
+  .btn-danger:hover{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+  .btn-danger-solid{background:var(--red);color:#fff;}
+  .btn-danger-solid:hover{opacity:.9;}
+  .confirm-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-muted);background:var(--red-bg);border:1px solid var(--red);border-radius:8px;padding:8px 10px;}
+  .mini-confirm{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--red);white-space:nowrap;}
+  .mini-confirm button{padding:3px 8px;font-size:11px;}
+  .section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);margin:22px 0 10px;}
+  .section-title:first-of-type{margin-top:0;}
+  .filter-note{text-transform:none;font-weight:400;letter-spacing:normal;font-size:11px;color:var(--ink-muted);margin-left:8px;}
+  .filter-note a{color:var(--accent);text-decoration:underline;cursor:pointer;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;color:var(--ink-muted);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--border);}
+  td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  input[type=text], input[type=number], input[type=date]{
+    font-family:var(--sans);font-size:12.5px;padding:6px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink);width:100%;
+  }
+  select{
+    font-family:var(--sans);font-size:12.5px;padding:6px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink);width:100%;
+  }
+  .select-row{display:flex;gap:6px;align-items:center;}
+  .modal-filter-select{width:auto;min-width:180px;margin-bottom:14px;}
+  .filter-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+  .date-filter-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-muted);}
+  .date-filter-label input{width:auto;}
+  .filter-row .modal-filter-select{margin-bottom:14px;}
+  .checkbox-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-muted);margin-bottom:14px;cursor:pointer;}
+  .checkbox-item{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:4px;}
+  .checkbox-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);}
+  .checkbox-label input{margin:0;}
+  .select-row select{flex:1;}
+  .select-row .btn-sm{white-space:nowrap;flex-shrink:0;}
+  .def-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .def-col .section-title{font-size:11px;}
+  .def-add{display:flex;gap:6px;margin-bottom:8px;}
+  .def-add button{flex-shrink:0;}
+  .def-list{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto;}
+  .def-item{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;}
+  .def-remove{background:none;border:none;color:var(--ink-muted);font-size:15px;line-height:1;padding:0 2px;}
+  .def-remove:hover{color:var(--red);}
+  .cal-group{margin-bottom:16px;}
+  .cal-summary{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-muted);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:14px;}
+  .cal-summary-amount{font-weight:600;color:var(--red);}
+  .cal-date{font-size:13px;font-weight:600;padding:6px 10px;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;border-left:3px solid var(--gray);background:var(--surface-2);}
+  .cal-date.cal-overdue{border-left-color:var(--red);color:var(--red);}
+  .cal-date.cal-soon{border-left-color:var(--amber);color:var(--amber);}
+  .cal-date.cal-done{border-left-color:var(--green);color:var(--green);}
+  .cal-date .cal-count{font-weight:400;color:var(--ink-muted);}
+  .cal-date .cal-count strong{color:var(--ink);font-weight:700;}
+  .cal-items{display:flex;flex-direction:column;gap:4px;}
+  .cal-row-wrap{display:flex;flex-direction:column;}
+  .cal-row{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);cursor:pointer;}
+  .cal-row:hover{border-color:var(--accent);background:var(--surface-2);}
+  .cal-row.expanded{border-color:var(--accent);border-bottom-left-radius:0;border-bottom-right-radius:0;background:var(--surface-2);}
+  .cal-row-editor{border:1px solid var(--accent);border-top:none;border-bottom-left-radius:7px;border-bottom-right-radius:7px;padding:10px;background:var(--surface);}
+  .editor-actions{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .cal-row-editor .veh-block{margin-bottom:10px;}
+  .cal-row .dot{margin-top:5px;flex-shrink:0;}
+  .cal-row-main{flex:1;min-width:0;}
+  .cal-row-title{font-size:12.5px;font-weight:600;}
+  .cal-row-sub{font-size:11.5px;color:var(--ink-muted);}
+  .cal-row-sub strong{color:var(--ink);font-weight:700;}
+  .cal-row-status{font-size:11.5px;font-weight:600;text-align:right;white-space:nowrap;flex-shrink:0;}
+  .t-red{color:var(--red);} .t-amber{color:var(--amber);} .t-green{color:var(--green);} .t-blue{color:var(--blue);} .t-gray{color:var(--gray);}
+  .filter-group{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:var(--surface-2);}
+  .filter-group-title{font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+  .filter-group .filter-row{margin-bottom:0;}
+  .cal-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .cal-table th{text-align:left;color:var(--ink-muted);font-weight:600;padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--surface);}
+  .cal-filter-row th{padding:4px 6px;font-weight:400;position:sticky;top:29px;background:var(--surface);}
+  .cal-filter-row input, .cal-filter-row select{font-size:11px;padding:4px 5px;min-width:70px;max-width:120px;}
+  .cal-table td{padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  .cal-tr{cursor:pointer;}
+  .cal-tr:hover{background:var(--surface-2);}
+  .cal-tr.expanded{background:var(--surface-2);}
+  .cal-tr .dot{display:inline-block;}
+  .cal-tr-editor td{background:var(--surface-2);white-space:normal;padding:12px;border-bottom:2px solid var(--accent);}
+  .cal-tr-editor .veh-block{margin-bottom:10px;}
+  input[type=date]{font-family:var(--mono);}
+  .veh-block{border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:12px;background:var(--surface-2);}
+  .veh-block.dirty{border-color:var(--amber);}
+  .veh-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .ikame-block{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+  .ikame-block > label{display:block;font-size:11px;color:var(--ink-muted);margin-bottom:6px;font-weight:600;}
+  .ikame-block > label.checkbox-item{display:flex;font-size:12px;color:var(--ink);}
+  .unsaved-hint{font-size:11px;color:var(--amber);font-weight:600;}
+  .unsaved-hint.saved{color:var(--ink-muted);font-weight:400;}
+  .veh-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .veh-head .plate{font-family:var(--mono);font-weight:600;font-size:13px;}
+  .ssh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;}
+  .ssh-item label{display:block;font-size:11px;color:var(--ink-muted);margin-bottom:4px;font-weight:600;}
+  .ssh-item label.checkbox-item{display:flex;font-size:12px;color:var(--ink);}
+  .ssh-item input{margin-bottom:4px;}
+  .ssh-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:4px;}
+  .ssh-btn{flex:1;font-family:var(--sans);font-size:11px;font-weight:600;padding:5px 4px;border:none;background:var(--surface);color:var(--ink-muted);cursor:pointer;border-radius:0;}
+  .ssh-btn:first-child{border-right:1px solid var(--border);}
+  .ssh-btn.active{background:var(--gray-bg);color:var(--gray);}
+  .ssh-btn:last-child.active{background:var(--green-bg);color:var(--green);}
+  .deliver-row{display:flex;gap:8px;align-items:end;margin-top:6px;}
+  .deliver-row > div{flex:1;}
+  .deliver-row label{display:block;font-size:11px;color:var(--ink-muted);margin-bottom:4px;font-weight:600;}
+  .pay-block{border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:10px;background:var(--surface-2);}
+  .pay-block .pay-head{display:flex;justify-content:flex-start;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;font-weight:600;}
+  .pay-block .pay-head .veh-count{color:var(--ink-muted);font-weight:400;font-size:12px;margin-right:auto;}
+  .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .pay-item-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center;}
+  .pay-item-remove{background:none;border:none;color:var(--ink-muted);font-size:16px;line-height:1;padding:4px 6px;flex-shrink:0;}
+  .pay-item-remove:hover{color:var(--red);}
+  .pay-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px;}
+  .pay-col{padding:10px;border-radius:8px;}
+  .pay-col-plan{background:var(--gray-bg);}
+  .pay-col-actual{background:var(--green-bg);}
+  .pay-col-title{font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+  .pay-col-title .hint{font-weight:400;color:var(--ink-muted);}
+  .pay-items{margin-bottom:8px;}
+  .pay-summary{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;}
+  .line-plan-block{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
+  .plan-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .plan-header-row > label{margin-bottom:0;}
+  .plan-add-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .line-plan-block > label{display:block;font-size:11px;color:var(--ink-muted);margin-bottom:6px;font-weight:600;}
+  .line-plan-block .hint{font-weight:400;text-transform:none;}
+  .plan-match-note{font-size:11.5px;margin-top:8px;padding:6px 9px;border-radius:6px;}
+  .plan-match-note.ok{color:var(--green);background:var(--green-bg);}
+  .plan-match-note.mismatch{color:var(--red);background:var(--red-bg);font-weight:600;}
+  .field label{display:block;font-size:11px;color:var(--ink-muted);margin-bottom:4px;font-weight:600;}
+  .field{margin-bottom:10px;}
+  .modal-bg{position:fixed;inset:0;background:rgba(20,20,18,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:10;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--surface);border-radius:12px;padding:22px;width:100%;max-width:600px;border:1px solid var(--border);}
+  .modal.detail-modal{max-width:820px;max-height:88vh;overflow:auto;}
+  .modal h3{margin:0 0 16px;font-size:16px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .line-card{border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:10px;background:var(--surface-2);position:relative;}
+  .line-card .remove-line{position:absolute;top:8px;right:8px;}
+  .line-row{display:grid;grid-template-columns:1.3fr 1.3fr 0.6fr 1fr;gap:8px;margin-bottom:8px;}
+  .line-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .field-group{border-radius:8px;padding:10px;margin-bottom:10px;}
+  .field-group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;}
+  .field-group.supplier-group{background:var(--amber-bg);}
+  .field-group.supplier-group .field-group-title{color:var(--amber);}
+  .field-group.customer-group{background:var(--blue-bg);}
+  .field-group.customer-group .field-group-title{color:var(--blue);}
+  .line-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;}
+  .line-row label{display:block;font-size:11px;color:var(--ink-muted);margin-bottom:4px;font-weight:600;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .plan-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .plan-dirty{margin-top:6px;font-size:11.5px;color:#b45309;background:#fffbeb;border:1px solid #fcd34d;border-radius:5px;padding:3px 7px;display:inline-block;}
+  .cekici-badge{display:inline-block;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .modal-head h3{margin:0;}
+  .modal-head .spacer{flex:1;}
+  .editor-actions{display:flex;gap:8px;margin:0 0 10px;}
+  .hint{font-size:11.5px;color:var(--ink-muted);margin-top:2px;}
+  #status-msg{position:fixed;bottom:16px;right:16px;background:var(--ink);color:var(--bg);font-size:12px;padding:8px 14px;border-radius:7px;opacity:0;transition:opacity .3s;pointer-events:none;}
+  #status-msg.show{opacity:.9;}
+</style>
+<script>
+/* ACR: window.storage sandbox stub — gercek depolama API yerine bos guvenli
+   nesne. Ana script bunu cagirirsa hata vermez; ama loadState/saveState
+   zaten integration.js'te override edilip API'ye yonlendiriliyor. */
+if (typeof window.storage === 'undefined') {
+  window.storage = {
+    get: async function(){ return null; },
+    set: async function(){ return true; },
+    remove: async function(){ return true; }
+  };
+}
+</script>
+  <script src="api.js"></script>
+  <script src="bridge.js"></script>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <h1>ACR Filo Sipariş Yönetim Sistemi</h1>
+    <div class="actions">
+      <button class="btn-ghost" onclick="openTedarikModal()">Tedarik takvimi</button>
+      <button class="btn-ghost" onclick="openUnifiedModal()">SSH Takvimi</button>
+      <button class="btn-ghost" onclick="openCalendarModal()">Teslim takvimi</button>
+      <button class="btn-ghost" onclick="openPaymentCalendarModal()">Ödeme takvimi</button>
+      <button class="btn-ghost" onclick="openDefModal()">Tanımlar</button>
+      <button class="btn-primary" onclick="openNewOrderModal()">+ Yeni sipariş</button>
+    </div>
+  </div>
+  <p class="subtitle">Sipariş → tedarikçi bazında ödeme → SSH hazırlığı (plaka, HGS, GPS, UTTS) → teslim, tek ekrandan.</p>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="filter-bar">
+        <input type="text" id="f-search" placeholder="Müşteri veya tedarikçi ara…" oninput="setFilter('search', this.value)">
+      </div>
+      <div class="tabs" id="tabs">
+        <button class="tab-btn" data-tab="open" onclick="setTab('open')">Açık Siparişler <span class="tab-count" id="tabCountOpen"></span></button>
+        <button class="tab-btn" data-tab="delivered" onclick="setTab('delivered')">Teslim Edildi <span class="tab-count" id="tabCountDelivered"></span></button>
+        <button class="tab-btn" data-tab="all" onclick="setTab('all')">Tüm Siparişler <span class="tab-count" id="tabCountAll"></span></button>
+      </div>
+      <div class="order-list" id="orderList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="detailModalBg">
+  <div class="modal detail-modal">
+    <div class="modal-head">
+      <h3 style="font-size:15px">Sipariş detayı</h3>
+      <button class="btn-primary btn-sm" onclick="closeDetailModal()">✕ Kapat</button>
+    </div>
+    <div class="detail" id="detailPanel"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Yeni sipariş</h3>
+      <button class="btn-ghost btn-sm" onclick="closeModal()">✕ Kapat</button>
+    </div>
+    <div class="field" id="musteriField"><label>Müşteri unvanı *</label>
+      <div class="select-row">
+        <select id="f-musteri"></select>
+        <button type="button" class="btn-ghost btn-sm" onclick="quickAdd('customers')">+ Yeni</button>
+      </div>
+    </div>
+    <div class="section-title" style="margin-top:6px">Araç kalemleri <span class="hint" style="text-transform:none;font-weight:400;">(her kalem kendi tedarikçisiyle)</span></div>
+    <div id="lineRows"></div>
+    <button class="btn-ghost btn-sm" onclick="addLineRow()">+ Kalem ekle</button>
+    <div class="modal-actions">
+      <button class="btn-primary" id="modalSubmitBtn" onclick="submitNewOrder()">Siparişi oluştur</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="defModalBg">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-head">
+      <h3>Tanımlar</h3>
+      <button class="btn-primary btn-sm" onclick="closeDefModal()">✕ Kapat</button>
+    </div>
+    <p class="hint" style="margin:-8px 0 16px">Burada eklediğiniz müşteri, tedarikçi ve araç markaları, yeni sipariş formunda seçenek olarak çıkar.</p>
+    <div class="def-grid">
+      <div class="def-col">
+        <div class="section-title" style="margin-top:0">Müşteriler</div>
+        <div class="def-add"><input type="text" id="def-customer-input" placeholder="Yeni müşteri unvanı" onkeydown="if(event.key==='Enter'){event.preventDefault();submitMasterInput('customers','def-customer-input');}"><button class="btn-primary btn-sm" onclick="submitMasterInput('customers','def-customer-input')">Ekle</button></div>
+        <div class="def-list" id="def-list-customers"></div>
+      </div>
+      <div class="def-col">
+        <div class="section-title" style="margin-top:0">Tedarikçiler</div>
+        <div class="def-add"><input type="text" id="def-supplier-input" placeholder="Yeni tedarikçi unvanı" onkeydown="if(event.key==='Enter'){event.preventDefault();submitMasterInput('suppliers','def-supplier-input');}"><button class="btn-primary btn-sm" onclick="submitMasterInput('suppliers','def-supplier-input')">Ekle</button></div>
+        <div class="def-list" id="def-list-suppliers"></div>
+      </div>
+      <div class="def-col">
+        <div class="section-title" style="margin-top:0">Araç markaları</div>
+        <div class="def-add"><input type="text" id="def-brand-input" placeholder="Yeni marka" onkeydown="if(event.key==='Enter'){event.preventDefault();submitMasterInput('brands','def-brand-input');}"><button class="btn-primary btn-sm" onclick="submitMasterInput('brands','def-brand-input')">Ekle</button></div>
+        <div class="def-list" id="def-list-brands"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="calModalBg">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h3>Teslim takvimi</h3>
+      <button class="btn-primary btn-sm" onclick="closeCalendarModal()">✕ Kapat</button>
+    </div>
+    <p class="hint" style="margin:-8px 0 12px">Planlanan Müşteriye Teslim Tarihine göre araçlar ve eksik işlemler.</p>
+    <div class="filter-row">
+      <select id="calMusteriFilter" class="modal-filter-select" onchange="setCalMusteriFilter(this.value)"></select>
+      <select id="calTeslimYeriFilter" class="modal-filter-select" onchange="setCalTeslimYeriFilter(this.value)"></select>
+      <label class="checkbox-label"><input type="checkbox" id="calHideDeliveredToggle" checked onchange="setCalHideDelivered(this.checked)"> Teslim edilenleri gizle</label>
+    </div>
+    <div id="calendarSummary" class="cal-summary"></div>
+    <div id="calendarBody"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="exportCalendarToExcel()">Excel'e aktar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="tedarikModalBg">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h3>Tedarik takvimi</h3>
+      <button class="btn-primary btn-sm" onclick="closeTedarikModal()">✕ Kapat</button>
+    </div>
+    <p class="hint" style="margin:-8px 0 12px">Planlanan Tedarikçi Teslim Tarihine göre araçlar.</p>
+    <div class="filter-row">
+      <select id="tedarikMusteriFilter" class="modal-filter-select" onchange="setTedarikMusteriFilter(this.value)"></select>
+      <select id="tedarikTedarikciFilter" class="modal-filter-select" onchange="setTedarikTedarikciFilter(this.value)"></select>
+      <label class="checkbox-label" style="white-space:nowrap"><input type="checkbox" id="tedarikGizleTeslim" checked onchange="setTedarikGizleTeslim(this.checked)"> Teslim alınanları gizle</label>
+    </div>
+    <div id="tedarikSummary" class="cal-summary"></div>
+    <div id="tedarikBody"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="exportTedarikToExcel()">Excel'e aktar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="unifiedModalBg">
+  <div class="modal" style="max-width:1000px">
+    <div class="modal-head">
+      <h3>SSH Takvimi</h3>
+      <button class="btn-primary btn-sm" onclick="closeUnifiedModal()">✕ Kapat</button>
+    </div>
+    <p class="hint" style="margin:-8px 0 12px">Her sütunun altındaki kutulardan filtreleyin.</p>
+    <div class="filter-row">
+      <label class="checkbox-label"><input type="checkbox" id="unifiedHideDeliveredToggle" checked onchange="setUnifiedHideDelivered(this.checked)"> Teslim edilenleri gizle</label>
+      <button class="btn-ghost btn-sm" onclick="clearAllUnifiedFilters()">Tüm filtreleri temizle</button>
+    </div>
+    <div id="unifiedSummary" class="cal-summary"></div>
+    <div id="unifiedBody" style="max-height:60vh;overflow:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="exportUnifiedToExcel()">Excel'e aktar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="paymentCalModalBg">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h3>Ödeme takvimi</h3>
+      <button class="btn-primary btn-sm" onclick="closePaymentCalendarModal()">✕ Kapat</button>
+    </div>
+    <p class="hint" style="margin:-8px 0 12px">Planlanan ödeme tarihine göre tüm siparişlerdeki ödeme kalemleri.</p>
+    <select id="payCalTedarikciFilter" class="modal-filter-select" onchange="setPayCalTedarikciFilter(this.value)"></select>
+    <div id="paymentCalendarSummary" class="cal-summary"></div>
+    <div id="paymentCalendarBody"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="exportPaymentCalendarToExcel()">Excel'e aktar</button>
+    </div>
+  </div>
+</div>
+<div id="status-msg"></div>
+
+<script>
+let state = { orders: [] };
+let masters = { customers: [], suppliers: [], brands: [] };
+let selectedOrderId = null;
+let pendingLines = [];
+let filters = { search: '' };
+
+function setFilter(key, value){
+  filters[key] = value;
+  renderOrderList();
+  renderDetail();
+}
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ if(!d) return "—"; const [y,m,day]=d.split("-"); return day+"."+m+"."+y; }
+function daysUntil(d){ if(!d) return null; const a=new Date(d+"T00:00:00"), b=new Date(todayISO()+"T00:00:00"); return Math.round((a-b)/86400000); }
+
+function formatMoneyInput(el){
+  const raw = el.value.replace(/[^\d]/g,'');
+  const num = raw ? parseInt(raw,10) : 0;
+  el.value = num ? num.toLocaleString('tr-TR', {maximumFractionDigits:0}) : '';
+  return num;
+}
+function parseMoney(str){
+  const raw = String(str||'').replace(/[^\d]/g,'');
+  return raw ? parseInt(raw,10) : null;
+}
+function fmtMoney(n){
+  return (n === null || n === undefined || n === '') ? '' : Number(n).toLocaleString('tr-TR', {maximumFractionDigits:0});
+}
+
+function fieldStatus(due, done){
+  if(done) return 'done';
+  if(!due) return 'neutral';
+  const d = daysUntil(due);
+  if(d < 0) return 'overdue';
+  if(d <= 3) return 'soon';
+  return 'neutral';
+}
+const STATUS_LABEL = {overdue:'Gecikti', soon:'Yaklaşıyor', neutral:'Bekliyor', ready:'Teslime hazır', done:'Tamamlandı'};
+const STATUS_CLASS = {overdue:'b-red', soon:'b-amber', neutral:'b-gray', ready:'b-blue', done:'b-green'};
+const STATUS_RANK = {overdue:4, soon:3, neutral:2, ready:1, done:0};
+
+function vehicleStatus(v){
+  if(v.gerceklesenTeslim) return 'done';
+  const items = ['plaka','hgs','gps','utts'].map(k => fieldStatus(v.planlananTeslim, v.ssh[k].tarih));
+  const worst = items.reduce((a,b)=> STATUS_RANK[b] > STATUS_RANK[a] ? b : a, 'done');
+  const teslimAlindiOk = !!(v.teslimAlindi && v.teslimAlindi.alindi);
+  if(worst === 'done'){
+    return teslimAlindiOk ? 'ready' : 'neutral';
+  }
+  return worst;
+}
+function lineTotal(l){ return l.adet * l.birimBedel; }
+function linePlanToplam(l){ return (l.odeme.planlar||[]).reduce((s,p)=>s+(p.tutar||0),0); }
+function lineOdenenToplam(l){ return (l.odeme.odemeler||[]).reduce((s,p)=>s+(p.tutar||0),0); }
+function lineKalanTutar(l){ return Math.max(lineTotal(l) - lineOdenenToplam(l), 0); }
+
+function lineInstallments(l){
+  const planlar = [...(l.odeme.planlar||[])].sort((a,b)=> String(a.tarih||'').localeCompare(String(b.tarih||'')));
+  let remaining = lineOdenenToplam(l);
+  return planlar.map(p => {
+    const tutar = p.tutar || 0;
+    const applied = Math.min(remaining, tutar);
+    const kalan = tutar - applied;
+    remaining -= applied;
+    let durum;
+    if(kalan <= 0) durum = 'done';
+    else {
+      const d = daysUntil(p.tarih);
+      if(d !== null && d < 0) durum = 'overdue';
+      else if(d !== null && d <= 3) durum = 'soon';
+      else durum = 'neutral';
+    }
+    return { ...p, kalan, durum };
+  });
+}
+
+function lineStatus(l){
+  if(!l || !l.odeme) return 'neutral';
+  const insts = lineInstallments(l);
+  if(insts.length === 0) return 'neutral';
+  return insts.reduce((worst, it) => STATUS_RANK[it.durum] > STATUS_RANK[worst] ? it.durum : worst, 'done');
+}
+
+function orderOverallStatus(order){
+  if(order.vehicles.length === 0) return 'neutral';
+  const allDelivered = order.vehicles.every(v => v.gerceklesenTeslim);
+  if(allDelivered) return 'done';
+  const vehicleStatuses = order.vehicles.map(vehicleStatus);
+  return vehicleStatuses.reduce((a,b)=> STATUS_RANK[b] > STATUS_RANK[a] ? b : a, 'done');
+}
+
+function orderMatchesStatus(order, status){
+  if(status === 'all') return true;
+  if(order.vehicles.length === 0) return status === 'pending';
+  const allDelivered = order.vehicles.every(v => v.gerceklesenTeslim);
+  if(status === 'done') return allDelivered;
+  if(status === 'pending') return !allDelivered;
+  return true;
+}
+
+let saveRetryTimer = null;
+
+async function saveState(){
+  for(let attempt = 0; attempt < 3; attempt++){
+    try{
+      const res = await window.storage.set('arac-teslim-orders', JSON.stringify(state.orders), false);
+      if(res){
+        if(saveRetryTimer){ clearTimeout(saveRetryTimer); saveRetryTimer = null; }
+        return true;
+      }
+    }catch(e){
+    }
+    if(attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt+1)));
+  }
+  toast('Kaydedilemedi, birazdan tekrar denenecek');
+  if(saveRetryTimer) clearTimeout(saveRetryTimer);
+  saveRetryTimer = setTimeout(saveState, 6000);
+  return false;
+}
+
+let masterSaveRetryTimer = null;
+async function saveMasters(){
+  for(let attempt = 0; attempt < 3; attempt++){
+    try{
+      const res = await window.storage.set('arac-teslim-masters', JSON.stringify(masters), false);
+      if(res){
+        if(masterSaveRetryTimer){ clearTimeout(masterSaveRetryTimer); masterSaveRetryTimer = null; }
+        return true;
+      }
+    }catch(e){
+    }
+    if(attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt+1)));
+  }
+  toast('Tanımlar kaydedilemedi, birazdan tekrar denenecek');
+  if(masterSaveRetryTimer) clearTimeout(masterSaveRetryTimer);
+  masterSaveRetryTimer = setTimeout(saveMasters, 6000);
+  return false;
+}
+
+async function loadMasters(){
+  let res = null;
+  for(let attempt = 0; attempt < 3; attempt++){
+    try{ res = await window.storage.get('arac-teslim-masters', false); break; }
+    catch(e){
+      if(attempt < 2) await new Promise(r => setTimeout(r, 400 * (attempt+1)));
+    }
+  }
+  masters = res && res.value ? JSON.parse(res.value) : { customers: [], suppliers: [], brands: [] };
+  seedMastersFromOrders();
+}
+
+function seedMastersFromOrders(){
+  let changed = false;
+  state.orders.forEach(o => {
+    if(o.musteriUnvani && !masters.customers.includes(o.musteriUnvani)){ masters.customers.push(o.musteriUnvani); changed = true; }
+    (o.vehicleLines || []).forEach(l => {
+      if(l.tedarikciUnvani && !masters.suppliers.includes(l.tedarikciUnvani)){ masters.suppliers.push(l.tedarikciUnvani); changed = true; }
+      if(l.marka && !masters.brands.includes(l.marka)){ masters.brands.push(l.marka); changed = true; }
+    });
+  });
+  if(changed){
+    sortMasters();
+    saveMasters();
+  }
+}
+function sortMasters(){
+  masters.customers.sort((a,b)=>a.localeCompare(b,'tr'));
+  masters.suppliers.sort((a,b)=>a.localeCompare(b,'tr'));
+  masters.brands.sort((a,b)=>a.localeCompare(b,'tr'));
+}
+
+function addMasterItem(type, value){
+  value = String(value||'').trim();
+  if(!value) return;
+  const exists = masters[type].some(v => v.toLocaleLowerCase('tr-TR') === value.toLocaleLowerCase('tr-TR'));
+  if(!exists){
+    masters[type].push(value);
+    sortMasters();
+    saveMasters();
+  }
+}
+function removeMasterItem(type, value){
+  masters[type] = masters[type].filter(v => v !== value);
+  saveMasters();
+  renderDefinitionLists();
+  refreshOrderFormSelects();
+}
+
+function openDefModal(){
+  renderDefinitionLists();
+  document.getElementById('defModalBg').classList.add('open');
+}
+function closeDefModal(){ document.getElementById('defModalBg').classList.remove('open'); }
+
+let calFilterMusteri = '';
+let calFilterTeslimYeri = '';
+let calHideDelivered = true;
+
+function populateCalMusteriFilter(){
+  const el = document.getElementById('calMusteriFilter');
+  if(!el) return;
+  const musteriler = [...new Set(state.orders.map(o=>o.musteriUnvani).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const current = calFilterMusteri;
+  el.innerHTML = '<option value="">Tüm müşteriler</option>' + musteriler.map(m => `<option value="${escapeHtml(m)}" ${m===current?'selected':''}>${escapeHtml(m)}</option>`).join('');
+}
+function populateCalTeslimYeriFilter(){
+  const el = document.getElementById('calTeslimYeriFilter');
+  if(!el) return;
+  const yerler = [...new Set(state.orders.flatMap(o=>o.vehicles.map(v=>v.teslimYeri)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const current = calFilterTeslimYeri;
+  el.innerHTML = '<option value="">Tüm teslim yerleri</option>' + yerler.map(y => `<option value="${escapeHtml(y)}" ${y===current?'selected':''}>${escapeHtml(y)}</option>`).join('');
+}
+function setCalMusteriFilter(v){
+  calFilterMusteri = v;
+  renderCalendarReport();
+}
+function setCalTeslimYeriFilter(v){
+  calFilterTeslimYeri = v;
+  renderCalendarReport();
+}
+function setCalHideDelivered(v){
+  calHideDelivered = v;
+  renderCalendarReport();
+}
+
+function openCalendarModal(){
+  populateCalMusteriFilter();
+  populateCalTeslimYeriFilter();
+  renderCalendarReport();
+  document.getElementById('calModalBg').classList.add('open');
+}
+function closeCalendarModal(){ document.getElementById('calModalBg').classList.remove('open'); }
+
+function vehicleKalanTutar(line){
+  if(!line || !(line.odeme.planlar||[]).length) return 0;
+  return Math.round(lineKalanTutar(line) / (line.adet || 1));
+}
+
+function vehicleMissingItems(v, line){
+  if(v.gerceklesenTeslim) return null;
+  const missing = [];
+  if(!(v.teslimAlindi && v.teslimAlindi.alindi)) missing.push('Teslim alma');
+  if(!v.ssh.plaka.yapildi) missing.push('Plaka');
+  if(!v.ssh.hgs.yapildi) missing.push('HGS');
+  if(!v.ssh.gps.yapildi) missing.push('GPS');
+  if(!v.ssh.utts.yapildi) missing.push('UTTS');
+  return missing;
+}
+
+function openOrderFromCalendar(orderId){
+  selectedOrderId = orderId;
+  closeCalendarModal();
+  closeTedarikModal();
+  closeUnifiedModal();
+  closePaymentCalendarModal();
+  render();
+  document.getElementById('detailModalBg').classList.add('open');
+}
+
+function calendarRowInfo(item){
+  const { vehicle, line } = item;
+  const missing = vehicleMissingItems(vehicle, line);
+  const delivered = !!vehicle.gerceklesenTeslim;
+  let dot = 'gray', statusText, textClass = 't-gray';
+  if(delivered){
+    dot = 'green'; textClass = 't-green'; statusText = 'Teslim edildi (' + fmtDate(vehicle.gerceklesenTeslim) + ')';
+  } else if(missing.length === 0){
+    dot = 'blue'; textClass = 't-blue'; statusText = 'Teslime hazır';
+  } else {
+    const d = daysUntil(vehicle.planlananTeslim);
+    if(d !== null && d < 0){ dot = 'red'; textClass = 't-red'; }
+    else if(d !== null && d <= 3){ dot = 'amber'; textClass = 't-amber'; }
+    statusText = 'Eksik: ' + missing.join(', ');
+  }
+  return { missing, delivered, dot, textClass, statusText };
+}
+
+function buildCalendarGroups(){
+  const groups = {};
+  state.orders.forEach(o => {
+    if(calFilterMusteri && o.musteriUnvani !== calFilterMusteri) return;
+    o.vehicles.forEach(v => {
+      if(calHideDelivered && v.gerceklesenTeslim) return;
+      if(calFilterTeslimYeri && v.teslimYeri !== calFilterTeslimYeri) return;
+      const key = v.planlananTeslim || '__none__';
+      if(!groups[key]) groups[key] = [];
+      const line = o.vehicleLines.find(l => l.id === v.lineId);
+      groups[key].push({ order:o, vehicle:v, line });
+    });
+  });
+  return groups;
+}
+
+let expandedCalVehicleId = null;
+
+function toggleCalVehicle(vehId){
+  expandedCalVehicleId = expandedCalVehicleId === vehId ? null : vehId;
+  renderCalendarReport();
+}
+
+function renderCalendarRow(item){
+  const { order, vehicle, line } = item;
+  const info = calendarRowInfo(item);
+  const expanded = expandedCalVehicleId === vehicle.id;
+  let tedarikText = 'Tedarik: —';
+  if(vehicle.tedarikTarihi){
+    const gun = daysUntil(vehicle.tedarikTarihi);
+    const gunText = gun < 0 ? Math.abs(gun) + ' gün gecikti' : gun === 0 ? 'bugün' : gun + ' gün kaldı';
+    tedarikText = `Tedarik: ${fmtDate(vehicle.tedarikTarihi)} · Tedariğe kalan gün: <strong>${gunText}</strong>`;
+  }
+  return `<div class="cal-row-wrap">
+    <div class="cal-row ${expanded ? 'expanded' : ''}" onclick="toggleCalVehicle('${vehicle.id}')">
+      <span class="dot" style="background:var(--${info.dot})"></span>
+      <div class="cal-row-main">
+        <div class="cal-row-title">${escapeHtml(vehicle.plakaNo) || 'Plaka atanmadı'} · ${escapeHtml(vehicle.marka)} ${escapeHtml(vehicle.model)}</div>
+        <div class="cal-row-sub">${escapeHtml(order.musteriUnvani)} · ${escapeHtml(line ? line.tedarikciUnvani : '') || '—'}${vehicle.teslimYeri ? ' · ' + escapeHtml(vehicle.teslimYeri) : ''}</div>
+        <div class="cal-row-sub">${tedarikText}</div>
+      </div>
+      <div class="cal-row-status ${info.textClass}">${info.statusText}</div>
+    </div>
+    ${expanded ? `<div class="cal-row-editor">
+            <div class="editor-actions">
+        <button type="button" class="btn-primary btn-sm" onclick="event.stopPropagation(); toggleCalVehicle('${vehicle.id}')">✕ Kapat</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="event.stopPropagation(); openOrderFromCalendar('${order.id}')">Siparişin tamamına git →</button>
+      </div>
+${renderVehicleBlock(order, vehicle)}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderCalendarGroup(dateKey, items, label){
+  let headerClass = 'cal-neutral';
+  let gunText = '';
+  if(items.every(it => it.vehicle.gerceklesenTeslim)) headerClass = 'cal-done';
+  else if(dateKey !== '__none__'){
+    const d = daysUntil(dateKey);
+    if(d < 0){ headerClass = 'cal-overdue'; gunText = Math.abs(d) + ' gün gecikti'; }
+    else if(d <= 3){ headerClass = 'cal-soon'; gunText = d === 0 ? 'bugün' : d + ' gün kaldı'; }
+    else { gunText = d + ' gün kaldı'; }
+  }
+  return `<div class="cal-group">
+    <div class="cal-date ${headerClass}">
+      <span>${label}${gunText ? ' · <strong>'+gunText+'</strong>' : ''}</span>
+      <span class="cal-count">${items.length} araç</span>
+    </div>
+    <div class="cal-items">${items.map(renderCalendarRow).join('')}</div>
+  </div>`;
+}
+
+function renderCalendarReport(){
+  const el = document.getElementById('calendarBody');
+  const summaryEl = document.getElementById('calendarSummary');
+  const groups = buildCalendarGroups();
+  const dateKeys = Object.keys(groups).filter(k => k !== '__none__').sort();
+  let html = dateKeys.map(k => renderCalendarGroup(k, groups[k], fmtDate(k))).join('');
+  if(groups['__none__'] && groups['__none__'].length){
+    html += renderCalendarGroup('__none__', groups['__none__'], 'Tarih belirtilmedi');
+  }
+  el.innerHTML = html || '<div class="empty">Henüz araç yok.</div>';
+
+  const allItems = Object.values(groups).flat();
+  const vehCount = allItems.length;
+  summaryEl.innerHTML = vehCount === 0 ? '' : `<span>${vehCount} araç</span>`;
+}
+
+function csvEscape(val){
+  const s = String(val ?? '');
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function exportCalendarToExcel(){
+  const groups = buildCalendarGroups();
+  const dateKeys = Object.keys(groups).filter(k => k !== '__none__').sort();
+  if(groups['__none__'] && groups['__none__'].length) dateKeys.push('__none__');
+
+  const header = ['Planlanan Müşteriye Teslim Tarihi','Plaka','Marka','Model','Müşteri','Tedarikçi','Teslim yeri','Durum','Eksikler'];
+  const rows = [header];
+
+  dateKeys.forEach(key => {
+    groups[key].forEach(item => {
+      const { order, vehicle, line } = item;
+      const info = calendarRowInfo(item);
+      rows.push([
+        key === '__none__' ? 'Tarih belirtilmedi' : fmtDate(key),
+        vehicle.plakaNo || 'Atanmadı',
+        vehicle.marka, vehicle.model,
+        order.musteriUnvani,
+        line ? line.tedarikciUnvani : '',
+        vehicle.teslimYeri || '',
+        info.delivered ? 'Teslim edildi' : (info.missing.length === 0 ? 'Teslime hazır' : 'Eksik var'),
+        info.delivered ? '' : info.missing.join(', ')
+      ]);
+    });
+  });
+
+  const csv = '\uFEFF' + rows.map(r => r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'teslim-takvimi-' + todayISO() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Excel dosyası indirildi');
+}
+
+let tedarikFilterMusteri = '';
+let tedarikGizleTeslim = true;  // VARSAYILAN: teslim alinanlari gizle
+let tedarikFilterTedarikci = '';
+let expandedTedarikVehicleId = null;
+
+function populateTedarikMusteriFilter(){
+  const el = document.getElementById('tedarikMusteriFilter');
+  if(!el) return;
+  const musteriler = [...new Set(state.orders.map(o=>o.musteriUnvani).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const current = tedarikFilterMusteri;
+  el.innerHTML = '<option value="">Tüm müşteriler</option>' + musteriler.map(m => `<option value="${escapeHtml(m)}" ${m===current?'selected':''}>${escapeHtml(m)}</option>`).join('');
+}
+function populateTedarikTedarikciFilter(){
+  const el = document.getElementById('tedarikTedarikciFilter');
+  if(!el) return;
+  const tedarikciler = [...new Set(state.orders.flatMap(o=>o.vehicleLines.map(l=>l.tedarikciUnvani)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const current = tedarikFilterTedarikci;
+  el.innerHTML = '<option value="">Tüm tedarikçiler</option>' + tedarikciler.map(t => `<option value="${escapeHtml(t)}" ${t===current?'selected':''}>${escapeHtml(t)}</option>`).join('');
+}
+function setTedarikMusteriFilter(v){
+  tedarikFilterMusteri = v;
+  renderTedarikReport();
+}
+function setTedarikGizleTeslim(v){ tedarikGizleTeslim = v; renderTedarikReport(); }
+function setTedarikTedarikciFilter(v){
+  tedarikFilterTedarikci = v;
+  renderTedarikReport();
+}
+
+function openTedarikModal(){
+  populateTedarikMusteriFilter();
+  populateTedarikTedarikciFilter();
+  renderTedarikReport();
+  document.getElementById('tedarikModalBg').classList.add('open');
+}
+function closeTedarikModal(){ document.getElementById('tedarikModalBg').classList.remove('open'); }
+
+function tedarikRowInfo(vehicle){
+  if(!vehicle.tedarikTarihi) return { dot:'gray', textClass:'t-gray', statusText:'Tarih belirtilmedi' };
+  const d = daysUntil(vehicle.tedarikTarihi);
+  if(d < 0) return { dot:'green', textClass:'t-green', statusText:'Tedarik edildi' };
+  if(d <= 3) return { dot:'amber', textClass:'t-amber', statusText:'Yaklaşıyor' };
+  return { dot:'gray', textClass:'t-gray', statusText:'Planlandı' };
+}
+
+function buildTedarikGroups(){
+  const groups = {};
+  state.orders.forEach(o => {
+    if(tedarikFilterMusteri && o.musteriUnvani !== tedarikFilterMusteri) return;
+    o.vehicles.forEach(v => {
+      const line = o.vehicleLines.find(l => l.id === v.lineId);
+      if(tedarikFilterTedarikci && (!line || line.tedarikciUnvani !== tedarikFilterTedarikci)) return;
+      // Teslim alinanlari gizle (varsayilan): gerceklesenTeslim dolu VEYA teslimAlindi.alindi
+      if(tedarikGizleTeslim && (v.gerceklesenTeslim || (v.teslimAlindi && v.teslimAlindi.alindi))) return;
+      const key = v.tedarikTarihi || '__none__';
+      if(!groups[key]) groups[key] = [];
+      groups[key].push({ order:o, vehicle:v, line });
+    });
+  });
+  return groups;
+}
+
+function toggleTedarikVehicle(vehId){
+  expandedTedarikVehicleId = expandedTedarikVehicleId === vehId ? null : vehId;
+  renderTedarikReport();
+}
+
+// "Çekici kullanıldı" rozeti — raporlarda ve listede gösterilir
+function cekiciBadge(v, prefix){
+  if(!v || !v.cekiciKullanildi) return '';
+  return (prefix || '') + '<span class="cekici-badge">🚛 Çekici</span>';
+}
+
+function renderTedarikRow(item){
+  const { order, vehicle, line } = item;
+  const info = tedarikRowInfo(vehicle);
+  const expanded = expandedTedarikVehicleId === vehicle.id;
+  let teslimText = 'Teslim: —';
+  if(vehicle.planlananTeslim){
+    const gun = daysUntil(vehicle.planlananTeslim);
+    const gunText = vehicle.gerceklesenTeslim
+      ? 'teslim edildi'
+      : gun < 0 ? Math.abs(gun) + ' gün gecikti'
+      : gun === 0 ? 'bugün'
+      : gun + ' gün kaldı';
+    teslimText = `Teslim: ${fmtDate(vehicle.planlananTeslim)} · Teslim tarihine kalan gün: <strong>${gunText}</strong>`;
+  }
+  return `<div class="cal-row-wrap">
+    <div class="cal-row ${expanded ? 'expanded' : ''}" onclick="toggleTedarikVehicle('${vehicle.id}')">
+      <span class="dot" style="background:var(--${info.dot})"></span>
+      <div class="cal-row-main">
+        <div class="cal-row-title">${escapeHtml(line ? line.tedarikciUnvani : '') || 'Tedarikçi yok'} · ${escapeHtml(vehicle.plakaNo) || 'Plaka atanmadı'} · ${escapeHtml(vehicle.marka)} ${escapeHtml(vehicle.model)}</div>
+        <div class="cal-row-sub">${escapeHtml(order.musteriUnvani)} · ${teslimText}${cekiciBadge(vehicle, ' · ')}</div>
+      </div>
+      <div class="cal-row-status ${info.textClass}">${info.statusText}</div>
+    </div>
+    ${expanded ? `<div class="cal-row-editor">
+            <div class="editor-actions">
+        <button type="button" class="btn-primary btn-sm" onclick="event.stopPropagation(); toggleTedarikVehicle('${vehicle.id}')">✕ Kapat</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="event.stopPropagation(); openOrderFromCalendar('${order.id}')">Siparişin tamamına git →</button>
+      </div>
+${renderVehicleBlock(order, vehicle)}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderTedarikGroup(dateKey, items, label){
+  let headerClass = 'cal-neutral';
+  let gunText = '';
+  if(dateKey !== '__none__'){
+    const d = daysUntil(dateKey);
+    if(d < 0){ headerClass = 'cal-done'; gunText = Math.abs(d) + ' gün gecikti'; }
+    else if(d <= 3){ headerClass = 'cal-soon'; gunText = d === 0 ? 'bugün' : d + ' gün kaldı'; }
+    else { gunText = d + ' gün kaldı'; }
+  }
+  return `<div class="cal-group">
+    <div class="cal-date ${headerClass}">
+      <span>${label}${gunText ? ' · <strong>'+gunText+'</strong>' : ''}</span>
+      <span class="cal-count">${items.length} araç</span>
+    </div>
+    <div class="cal-items">${items.map(renderTedarikRow).join('')}</div>
+  </div>`;
+}
+
+function renderTedarikReport(){
+  const el = document.getElementById('tedarikBody');
+  const summaryEl = document.getElementById('tedarikSummary');
+  const groups = buildTedarikGroups();
+  const dateKeys = Object.keys(groups).filter(k => k !== '__none__').sort();
+  let html = dateKeys.map(k => renderTedarikGroup(k, groups[k], fmtDate(k))).join('');
+  if(groups['__none__'] && groups['__none__'].length){
+    html += renderTedarikGroup('__none__', groups['__none__'], 'Tarih belirtilmedi');
+  }
+  el.innerHTML = html || '<div class="empty">Henüz araç yok.</div>';
+
+  const allItems = Object.values(groups).flat();
+  summaryEl.innerHTML = allItems.length === 0 ? '' : `<span>${allItems.length} araç</span>`;
+}
+
+function exportTedarikToExcel(){
+  const groups = buildTedarikGroups();
+  const dateKeys = Object.keys(groups).filter(k => k !== '__none__').sort();
+  if(groups['__none__'] && groups['__none__'].length) dateKeys.push('__none__');
+
+  const header = ['Planlanan Tedarikçi Teslim Tarihi','Plaka','Marka','Model','Müşteri','Tedarikçi','Teslim tarihi','Kalan gün','Durum'];
+  const rows = [header];
+
+  dateKeys.forEach(key => {
+    groups[key].forEach(item => {
+      const { order, vehicle, line } = item;
+      const info = tedarikRowInfo(vehicle);
+      let kalanGunText = '';
+      if(vehicle.planlananTeslim){
+        const gun = daysUntil(vehicle.planlananTeslim);
+        kalanGunText = vehicle.gerceklesenTeslim ? 'Teslim edildi' : gun < 0 ? Math.abs(gun) + ' gün gecikti' : gun === 0 ? 'Bugün' : gun + ' gün kaldı';
+      }
+      rows.push([
+        key === '__none__' ? 'Tarih belirtilmedi' : fmtDate(key),
+        vehicle.plakaNo || 'Atanmadı',
+        vehicle.marka, vehicle.model,
+        order.musteriUnvani,
+        line ? line.tedarikciUnvani : '',
+        vehicle.planlananTeslim ? fmtDate(vehicle.planlananTeslim) : '',
+        kalanGunText,
+        info.statusText
+      ]);
+    });
+  });
+
+  const csv = '\uFEFF' + rows.map(r => r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tedarik-takvimi-' + todayISO() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Excel dosyası indirildi');
+}
+
+let unifiedFilterPlaka = '';
+let unifiedFilterMarka = '';
+let unifiedFilterMusteri = '';
+let unifiedFilterTedarikci = '';
+let unifiedFilterTedarikYeri = '';
+let unifiedFilterTeslimYeri = '';
+let unifiedFilterDurum = '';
+let unifiedTedarikFrom = '';
+let unifiedTeslimFrom = '';
+let unifiedHideDelivered = true;
+let expandedUnifiedVehicleId = null;
+
+function setUnifiedFilter(field, v){
+  if(field === 'plaka') unifiedFilterPlaka = v.toLocaleLowerCase('tr-TR');
+  else if(field === 'marka') unifiedFilterMarka = v.toLocaleLowerCase('tr-TR');
+  else if(field === 'musteri') unifiedFilterMusteri = v;
+  else if(field === 'tedarikci') unifiedFilterTedarikci = v;
+  else if(field === 'tedarikYeri') unifiedFilterTedarikYeri = v;
+  else if(field === 'teslimYeri') unifiedFilterTeslimYeri = v;
+  else if(field === 'durum') unifiedFilterDurum = v;
+  else if(field === 'tedarikTarihi') unifiedTedarikFrom = v;
+  else if(field === 'teslimTarihi') unifiedTeslimFrom = v;
+  renderUnifiedReport();
+}
+function setUnifiedHideDelivered(v){
+  unifiedHideDelivered = v;
+  renderUnifiedReport();
+}
+function clearAllUnifiedFilters(){
+  unifiedFilterPlaka = ''; unifiedFilterMarka = ''; unifiedFilterMusteri = ''; unifiedFilterTedarikci = '';
+  unifiedFilterTedarikYeri = ''; unifiedFilterTeslimYeri = ''; unifiedFilterDurum = '';
+  unifiedTedarikFrom = ''; unifiedTeslimFrom = '';
+  renderUnifiedReport();
+}
+
+function openUnifiedModal(){
+  renderUnifiedReport();
+  document.getElementById('unifiedModalBg').classList.add('open');
+}
+function closeUnifiedModal(){ document.getElementById('unifiedModalBg').classList.remove('open'); }
+
+function toggleUnifiedVehicle(vehId){
+  expandedUnifiedVehicleId = expandedUnifiedVehicleId === vehId ? null : vehId;
+  renderUnifiedReport();
+}
+
+function unifiedDurumCategory(dot){
+  if(dot === 'red') return 'Gecikti';
+  if(dot === 'amber') return 'Yaklaşıyor';
+  if(dot === 'blue') return 'Teslime hazır';
+  if(dot === 'green') return 'Teslim edildi';
+  return 'Bekliyor';
+}
+
+function buildUnifiedItems(){
+  const items = [];
+  state.orders.forEach(o => {
+    if(unifiedFilterMusteri && o.musteriUnvani !== unifiedFilterMusteri) return;
+    o.vehicles.forEach(v => {
+      if(unifiedHideDelivered && v.gerceklesenTeslim) return;
+      if(unifiedFilterPlaka && !(v.plakaNo||'').toLocaleLowerCase('tr-TR').includes(unifiedFilterPlaka)) return;
+      if(unifiedFilterMarka && !((v.marka||'')+' '+(v.model||'')).toLocaleLowerCase('tr-TR').includes(unifiedFilterMarka)) return;
+      const line = o.vehicleLines.find(l => l.id === v.lineId);
+      if(unifiedFilterTedarikci && (!line || line.tedarikciUnvani !== unifiedFilterTedarikci)) return;
+      if(unifiedFilterTedarikYeri && v.tedarikYeri !== unifiedFilterTedarikYeri) return;
+      if(unifiedFilterTeslimYeri && v.teslimYeri !== unifiedFilterTeslimYeri) return;
+      if(unifiedTedarikFrom && v.tedarikTarihi !== unifiedTedarikFrom) return;
+      if(unifiedTeslimFrom && v.planlananTeslim !== unifiedTeslimFrom) return;
+      if(unifiedFilterDurum){
+        const info = calendarRowInfo({ vehicle:v, line });
+        if(unifiedDurumCategory(info.dot) !== unifiedFilterDurum) return;
+      }
+      items.push({ order:o, vehicle:v, line });
+    });
+  });
+  items.sort((a,b) => String(a.vehicle.planlananTeslim||'9999').localeCompare(String(b.vehicle.planlananTeslim||'9999')));
+  return items;
+}
+
+function renderUnifiedRow(item){
+  const { order, vehicle, line } = item;
+  const info = calendarRowInfo(item);
+  const expanded = expandedUnifiedVehicleId === vehicle.id;
+  const rows = [`<tr class="cal-tr ${expanded?'expanded':''}" onclick="toggleUnifiedVehicle('${vehicle.id}')">
+    <td><span class="dot" style="background:var(--${info.dot})"></span></td>
+    <td>${escapeHtml(vehicle.plakaNo) || 'Atanmadı'}</td>
+    <td>${escapeHtml(vehicle.marka)} ${escapeHtml(vehicle.model)}</td>
+    <td>${escapeHtml(order.musteriUnvani)}</td>
+    <td>${escapeHtml(line ? line.tedarikciUnvani : '') || '—'}</td>
+    <td>${vehicle.tedarikTarihi ? fmtDate(vehicle.tedarikTarihi) : '—'}</td>
+    <td>${escapeHtml(vehicle.tedarikYeri) || '—'}${cekiciBadge(vehicle, '<br>')}</td>
+    <td>${vehicle.planlananTeslim ? fmtDate(vehicle.planlananTeslim) : '—'}</td>
+    <td>${escapeHtml(vehicle.teslimYeri) || '—'}</td>
+    <td class="${info.textClass}">${info.statusText}</td>
+  </tr>`];
+  if(expanded){
+    rows.push(`<tr class="cal-tr-editor"><td colspan="10">
+            <div class="editor-actions">
+        <button type="button" class="btn-primary btn-sm" onclick="event.stopPropagation(); toggleUnifiedVehicle('${vehicle.id}')">✕ Kapat</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="event.stopPropagation(); openOrderFromCalendar('${order.id}')">Siparişin tamamına git →</button>
+      </div>
+${renderVehicleBlock(order, vehicle)}
+    </td></tr>`);
+  }
+  return rows.join('');
+}
+
+function renderUnifiedReport(){
+  const el = document.getElementById('unifiedBody');
+  const summaryEl = document.getElementById('unifiedSummary');
+  const items = buildUnifiedItems();
+
+  const musteriler = [...new Set(state.orders.map(o=>o.musteriUnvani).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const tedarikciler = [...new Set(state.orders.flatMap(o=>o.vehicleLines.map(l=>l.tedarikciUnvani)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const tedarikYerleri = [...new Set(state.orders.flatMap(o=>o.vehicles.map(v=>v.tedarikYeri)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const teslimYerleri = [...new Set(state.orders.flatMap(o=>o.vehicles.map(v=>v.teslimYeri)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const durumSecenekleri = ['Gecikti','Yaklaşıyor','Teslime hazır','Bekliyor','Teslim edildi'];
+  // Tarih filtreleri: serbest giris yerine VERIDE VAR OLAN tarihler
+  const tedarikTarihleri = [...new Set(state.orders.flatMap(o=>o.vehicles.map(v=>v.tedarikTarihi)).filter(Boolean))].sort();
+  const teslimTarihleri  = [...new Set(state.orders.flatMap(o=>o.vehicles.map(v=>v.planlananTeslim)).filter(Boolean))].sort();
+  const optDate = (list, current) => '<option value="">Tümü</option>' + list.map(v => `<option value="${escapeHtml(v)}" ${v===current?'selected':''}>${fmtDate(v)}</option>`).join('');
+
+  const opt = (list, current) => '<option value="">Tümü</option>' + list.map(v => `<option value="${escapeHtml(v)}" ${v===current?'selected':''}>${escapeHtml(v)}</option>`).join('');
+
+  const filterRow = `<tr class="cal-filter-row">
+    <th></th>
+    <th><input type="text" placeholder="Ara" value="${escapeHtml(unifiedFilterPlaka)}" onchange="setUnifiedFilter('plaka', this.value)"></th>
+    <th><input type="text" placeholder="Ara" value="${escapeHtml(unifiedFilterMarka)}" onchange="setUnifiedFilter('marka', this.value)"></th>
+    <th><select onchange="setUnifiedFilter('musteri', this.value)">${opt(musteriler, unifiedFilterMusteri)}</select></th>
+    <th><select onchange="setUnifiedFilter('tedarikci', this.value)">${opt(tedarikciler, unifiedFilterTedarikci)}</select></th>
+    <th><select onchange="setUnifiedFilter('tedarikTarihi', this.value)">${optDate(tedarikTarihleri, unifiedTedarikFrom)}</select></th>
+    <th><select onchange="setUnifiedFilter('tedarikYeri', this.value)">${opt(tedarikYerleri, unifiedFilterTedarikYeri)}</select></th>
+    <th><select onchange="setUnifiedFilter('teslimTarihi', this.value)">${optDate(teslimTarihleri, unifiedTeslimFrom)}</select></th>
+    <th><select onchange="setUnifiedFilter('teslimYeri', this.value)">${opt(teslimYerleri, unifiedFilterTeslimYeri)}</select></th>
+    <th><select onchange="setUnifiedFilter('durum', this.value)">${opt(durumSecenekleri, unifiedFilterDurum)}</select></th>
+  </tr>`;
+
+  el.innerHTML = `<table class="cal-table">
+    <thead>
+      <tr><th></th><th>Plaka</th><th>Marka / Model</th><th>Müşteri</th><th>Tedarikçi</th><th>Tedarik tarihi</th><th>Tedarik yeri</th><th>Teslim tarihi</th><th>Teslim yeri</th><th>Durum</th></tr>
+      ${filterRow}
+    </thead>
+    <tbody>${items.length ? items.map(renderUnifiedRow).join('') : '<tr><td colspan="10" class="empty">Filtreye uyan araç yok.</td></tr>'}</tbody>
+  </table>`;
+  summaryEl.innerHTML = `<span>${items.length} araç</span>`;
+}
+
+function exportUnifiedToExcel(){
+  const items = buildUnifiedItems();
+  const header = ['Plaka','Marka','Model','Müşteri','Tedarikçi','Tedarik tarihi','Tedarik yeri','Teslim tarihi','Teslim yeri','Durum'];
+  const rows = [header];
+  items.forEach(item => {
+    const { order, vehicle, line } = item;
+    const info = calendarRowInfo(item);
+    rows.push([
+      vehicle.plakaNo || 'Atanmadı',
+      vehicle.marka, vehicle.model,
+      order.musteriUnvani,
+      line ? line.tedarikciUnvani : '',
+      vehicle.tedarikTarihi ? fmtDate(vehicle.tedarikTarihi) : '',
+      vehicle.tedarikYeri || '',
+      vehicle.planlananTeslim ? fmtDate(vehicle.planlananTeslim) : '',
+      vehicle.teslimYeri || '',
+      info.statusText
+    ]);
+  });
+  const csv = '\uFEFF' + rows.map(r => r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'birlesik-takvim-' + todayISO() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Excel dosyası indirildi');
+}
+
+let payCalFilterTedarikci = '';
+
+function populatePayCalTedarikciFilter(){
+  const el = document.getElementById('payCalTedarikciFilter');
+  if(!el) return;
+  const tedarikciler = [...new Set(state.orders.flatMap(o=>o.vehicleLines.map(l=>l.tedarikciUnvani)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const current = payCalFilterTedarikci;
+  el.innerHTML = '<option value="">Tüm tedarikçiler</option>' + tedarikciler.map(t => `<option value="${escapeHtml(t)}" ${t===current?'selected':''}>${escapeHtml(t)}</option>`).join('');
+}
+function setPayCalTedarikciFilter(v){
+  payCalFilterTedarikci = v;
+  renderPaymentCalendarReport();
+}
+
+function openPaymentCalendarModal(){
+  populatePayCalTedarikciFilter();
+  renderPaymentCalendarReport();
+  document.getElementById('paymentCalModalBg').classList.add('open');
+}
+function closePaymentCalendarModal(){ document.getElementById('paymentCalModalBg').classList.remove('open'); }
+
+function buildPaymentCalendarGroups(){
+  const groups = {};
+  state.orders.forEach(o => {
+    o.vehicleLines.forEach(l => {
+      if(payCalFilterTedarikci && l.tedarikciUnvani !== payCalFilterTedarikci) return;
+      lineInstallments(l).forEach(inst => {
+        if(inst.durum === 'done') return;
+        const key = inst.tarih || '__none__';
+        if(!groups[key]) groups[key] = [];
+        groups[key].push({ order:o, line:l, inst });
+      });
+    });
+  });
+  return groups;
+}
+
+let expandedPayCalLineId = null;
+
+function togglePayCalLine(lineId){
+  expandedPayCalLineId = expandedPayCalLineId === lineId ? null : lineId;
+  renderPaymentCalendarReport();
+}
+
+function renderPayCalRow(item){
+  const { order, line, inst } = item;
+  const dot = inst.durum==='done' ? 'green' : inst.durum==='overdue' ? 'red' : inst.durum==='soon' ? 'amber' : 'gray';
+  const textClass = 't-' + dot;
+  const amountText = inst.kalan > 0 && inst.kalan !== inst.tutar
+    ? fmtMoney(inst.kalan) + ' ₺ kalan (' + fmtMoney(inst.tutar) + ' ₺ plan)'
+    : fmtMoney(inst.tutar) + ' ₺';
+  const expanded = expandedPayCalLineId === line.id;
+  return `<div class="cal-row-wrap">
+    <div class="cal-row ${expanded ? 'expanded' : ''}" onclick="togglePayCalLine('${line.id}')">
+      <span class="dot" style="background:var(--${dot})"></span>
+      <div class="cal-row-main">
+        <div class="cal-row-title">${escapeHtml(line.tedarikciUnvani) || 'Tedarikçi yok'} · ${amountText}</div>
+        <div class="cal-row-sub">${escapeHtml(order.musteriUnvani)} · ${escapeHtml(line.marka)} ${escapeHtml(line.model)}</div>
+      </div>
+      <div class="cal-row-status ${textClass}">${STATUS_LABEL[inst.durum]}</div>
+    </div>
+    ${expanded ? `<div class="cal-row-editor">
+            <div class="editor-actions">
+        <button type="button" class="btn-primary btn-sm" onclick="event.stopPropagation(); togglePayCalLine('${line.id}')">✕ Kapat</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="event.stopPropagation(); openOrderFromCalendar('${order.id}')">Siparişin tamamına git →</button>
+      </div>
+${renderPaymentBlock(order, line)}
+    </div>` : ''}
+  </div>`;
+}
+
+function renderPayCalGroup(dateKey, items, label){
+  let headerClass = 'cal-neutral';
+  if(items.every(it => it.inst.durum === 'done')) headerClass = 'cal-done';
+  else if(dateKey !== '__none__'){
+    const d = daysUntil(dateKey);
+    if(d < 0) headerClass = 'cal-overdue';
+    else if(d <= 3) headerClass = 'cal-soon';
+  }
+  const total = items.reduce((s,it) => s + (it.inst.tutar||0), 0);
+  const kalan = items.reduce((s,it) => s + (it.inst.kalan||0), 0);
+  const odenen = total - kalan;
+  return `<div class="cal-group">
+    <div class="cal-date ${headerClass}">
+      <span>${label}</span>
+      <span class="cal-count">Toplam: ${fmtMoney(total)} ₺ · Ödenen: ${fmtMoney(odenen)} ₺${kalan>0 ? ' · Kalan: <strong>'+fmtMoney(kalan)+' ₺</strong>' : ''} · ${items.length} kalem</span>
+    </div>
+    <div class="cal-items">${items.map(renderPayCalRow).join('')}</div>
+  </div>`;
+}
+
+function renderPaymentCalendarReport(){
+  const el = document.getElementById('paymentCalendarBody');
+  const summaryEl = document.getElementById('paymentCalendarSummary');
+  const groups = buildPaymentCalendarGroups();
+  const dateKeys = Object.keys(groups).filter(k => k !== '__none__').sort();
+  let html = dateKeys.map(k => renderPayCalGroup(k, groups[k], fmtDate(k))).join('');
+  if(groups['__none__'] && groups['__none__'].length){
+    html += renderPayCalGroup('__none__', groups['__none__'], 'Tarih belirtilmedi');
+  }
+  el.innerHTML = html || '<div class="empty">Henüz ödeme planı yok.</div>';
+
+  const allItems = Object.values(groups).flat();
+  const grandTotal = allItems.reduce((s,it) => s + (it.inst.tutar||0), 0);
+  const grandKalan = allItems.reduce((s,it) => s + (it.inst.kalan||0), 0);
+  summaryEl.innerHTML = allItems.length === 0 ? '' :
+    `<span>${allItems.length} ödeme kalemi</span><span class="cal-summary-amount">Kalan: ${fmtMoney(grandKalan)} ₺ / Toplam plan: ${fmtMoney(grandTotal)} ₺</span>`;
+}
+
+function exportPaymentCalendarToExcel(){
+  const groups = buildPaymentCalendarGroups();
+  const dateKeys = Object.keys(groups).filter(k => k !== '__none__').sort();
+  if(groups['__none__'] && groups['__none__'].length) dateKeys.push('__none__');
+
+  const header = ['Ödeme tarihi','Müşteri','Tedarikçi','Marka','Model','Plan tutarı (₺)','Kalan (₺)','Durum'];
+  const rows = [header];
+
+  dateKeys.forEach(key => {
+    groups[key].forEach(item => {
+      const { order, line, inst } = item;
+      rows.push([
+        key === '__none__' ? 'Tarih belirtilmedi' : fmtDate(key),
+        order.musteriUnvani,
+        line.tedarikciUnvani,
+        line.marka, line.model,
+        Math.round(inst.tutar || 0),
+        Math.round(inst.kalan || 0),
+        STATUS_LABEL[inst.durum]
+      ]);
+    });
+  });
+
+  const csv = '\uFEFF' + rows.map(r => r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'odeme-takvimi-' + todayISO() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Excel dosyası indirildi');
+}
+
+function submitMasterInput(type, inputId){
+  const el = document.getElementById(inputId);
+  addMasterItem(type, el.value);
+  el.value = '';
+  renderDefinitionLists();
+  refreshOrderFormSelects();
+}
+
+function renderDefinitionLists(){
+  const map = { customers:'def-list-customers', suppliers:'def-list-suppliers', brands:'def-list-brands' };
+  Object.entries(map).forEach(([type, elId]) => {
+    const el = document.getElementById(elId);
+    if(!el) return;
+    if(!masters[type] || masters[type].length === 0){
+      el.innerHTML = '<div class="hint">Henüz eklenmedi</div>';
+      return;
+    }
+    el.innerHTML = masters[type].map(v =>
+      `<div class="def-item"><span>${escapeHtml(v)}</span><button class="def-remove" onclick="removeMasterItem('${type}', decodeURIComponent('${encodeURIComponent(v)}'))">×</button></div>`
+    ).join('');
+  });
+}
+
+function quickAdd(type){
+  openDefModal();
+  const inputId = type==='customers' ? 'def-customer-input' : type==='suppliers' ? 'def-supplier-input' : 'def-brand-input';
+  setTimeout(() => { const el = document.getElementById(inputId); if(el) el.focus(); }, 50);
+}
+
+function refreshOrderFormSelects(){
+  const modal = document.getElementById('modalBg');
+  if(modal && modal.classList.contains('open')){
+    renderMusteriSelect();
+    renderLineRows();
+  }
+}
+
+function renderMusteriSelect(){
+  const el = document.getElementById('f-musteri');
+  if(!el) return;
+  const current = el.value;
+  const opts = masters.customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  el.innerHTML = `<option value="">Seçiniz</option>${opts}`;
+  if(masters.customers.includes(current)) el.value = current;
+}
+async function loadState(){
+  let res = null;
+  for(let attempt = 0; attempt < 3; attempt++){
+    try{
+      res = await window.storage.get('arac-teslim-orders', false);
+      break;
+    }catch(e){
+      if(attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt+1)));
+    }
+  }
+  state.orders = res && res.value ? JSON.parse(res.value) : [];
+  state.orders = state.orders.map(migrateOrder);
+  render();
+}
+
+function migrateOrder(o){
+  o.vehicleLines = (o.vehicleLines || []).map(l => {
+    const raw = l.odeme ?? (o.odeme ? {...o.odeme} : {});
+    let odeme;
+    if(Array.isArray(raw.planlar) || Array.isArray(raw.odemeler)){
+      odeme = { planlar: raw.planlar || [], odemeler: raw.odemeler || [] };
+    } else {
+      const planlar = [];
+      const odemeler = [];
+      if(raw.onOdemeTutari){
+        const planTarih = raw.onOdemeVade || raw.onOdemeTarihi;
+        if(planTarih) planlar.push({ id: uid(), tarih: planTarih, tutar: raw.onOdemeTutari });
+        if(raw.onOdemeTarihi) odemeler.push({ id: uid(), tarih: raw.onOdemeTarihi, tutar: raw.onOdemeTutari });
+      }
+      const total = (l.adet||0) * (l.birimBedel||0);
+      const kalan = Math.max(total - (raw.onOdemeTutari||0), 0);
+      if((raw.kalanOdemeVade || raw.kalanOdemeTarihi) && kalan > 0){
+        const planTarih = raw.kalanOdemeVade || raw.kalanOdemeTarihi;
+        planlar.push({ id: uid(), tarih: planTarih, tutar: kalan });
+        if(raw.kalanOdemeTarihi) odemeler.push({ id: uid(), tarih: raw.kalanOdemeTarihi, tutar: kalan });
+      }
+      odeme = { planlar, odemeler };
+    }
+    return {
+      ...l,
+      tedarikciUnvani: l.tedarikciUnvani ?? o.tedarikciUnvani ?? '',
+      odeme
+    };
+  });
+  o.vehicles = (o.vehicles || []).map(v => {
+    ['plaka','hgs','gps','utts'].forEach(key => {
+      const item = v.ssh && v.ssh[key] ? v.ssh[key] : {};
+      v.ssh = v.ssh || {};
+      v.ssh[key] = { yapildi: item.yapildi ?? !!item.tarih, tarih: item.tarih ?? null };
+    });
+    v.teslimYeri = v.teslimYeri ?? '';
+    v.tedarikTarihi = v.tedarikTarihi ?? null;
+    v.tedarikYeri = v.tedarikYeri ?? '';
+    v.ikame = v.ikame ?? { verildi:false, tarih:null, plaka:'', iadeTarihi:null };
+    v.teslimAlindi = v.teslimAlindi ?? { alindi:false, tarih:null };
+    return v;
+  });
+  delete o.tedarikciUnvani;
+  delete o.odeme;
+  return o;
+}
+
+function toast(msg){
+  const el = document.getElementById('status-msg');
+  el.textContent = msg; el.classList.add('show');
+  const duration = Math.min(Math.max(1800, msg.length * 60), 5000);
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>el.classList.remove('show'), duration);
+}
+
+function render(){
+  renderOrderList();
+  renderDetail();
+}
+
+function orderSSHSummary(order){
+  const counts = { plaka:{done:0,total:0}, hgs:{done:0,total:0}, gps:{done:0,total:0}, utts:{done:0,total:0} };
+  order.vehicles.forEach(v => {
+    ['plaka','hgs','gps','utts'].forEach(k => {
+      counts[k].total++;
+      if(v.ssh[k].yapildi) counts[k].done++;
+    });
+  });
+  return counts;
+}
+function orderKalanBorc(order){
+  return order.vehicleLines.reduce((s,l) => s + lineKalanTutar(l), 0);
+}
+
+let expandedMainVehicleId = null;
+function toggleMainVehicle(vehId){
+  expandedMainVehicleId = expandedMainVehicleId === vehId ? null : vehId;
+  renderOrderList();
+}
+
+function buildUnifiedOrderCard(order, vehicleSubset){
+  const allVeh = order.vehicles;
+  const deliveredCount = allVeh.filter(v => v.gerceklesenTeslim).length;
+  const pendingCount = allVeh.length - deliveredCount;
+  const kalanBorc = orderKalanBorc(order);
+
+  const debtSchedule = [];
+  order.vehicleLines.forEach(l => {
+    lineInstallments(l).forEach(inst => {
+      if(inst.kalan > 0) debtSchedule.push({ tarih: inst.tarih, tutar: inst.kalan, durum: inst.durum, tedarikci: l.tedarikciUnvani });
+    });
+  });
+  debtSchedule.sort((a,b) => String(a.tarih||'').localeCompare(String(b.tarih||'')));
+  const debtRows = debtSchedule.map(d => {
+    const dot = d.durum==='overdue' ? 'red' : d.durum==='soon' ? 'amber' : 'gray';
+    return `<div class="pay-row"><span class="dot" style="background:var(--${dot})"></span><strong>Ödeme tarihi:</strong> ${fmtDate(d.tarih)} · <strong>Tutar:</strong> ${fmtMoney(d.tutar)} ₺ · <strong>Tedarikçi:</strong> ${escapeHtml(d.tedarikci||'—')}</div>`;
+  }).join('');
+
+  const vehRows = vehicleSubset.map(v => {
+    let ikameText = '';
+    if(v.ikame && v.ikame.verildi){
+      const plakaText = v.ikame.plaka ? ' ('+escapeHtml(v.ikame.plaka)+')' : '';
+      ikameText = v.ikame.iadeTarihi
+        ? ` · <span class="ikame-tag ikame-returned">✓ İkame iade alındı${plakaText}</span>`
+        : ` · <span class="ikame-tag">🔄 İkame verildi${plakaText}</span>`;
+    }
+    let summaryLine;
+    if(v.gerceklesenTeslim){
+      summaryLine = `<span class="dot" style="background:var(--green)"></span><strong>Plaka:</strong> ${escapeHtml(v.plakaNo) || 'atanmadı'} · <strong>Araç:</strong> ${escapeHtml(v.marka)} ${escapeHtml(v.model)} · <strong>Teslim tarihi:</strong> <span class="t-green">${fmtDate(v.gerceklesenTeslim)} (Teslim edildi)</span>${ikameText}${cekiciBadge(v, ' · ')}`;
+    } else {
+      const st = vehicleStatus(v);
+      const dot = st==='overdue' ? 'red' : st==='soon' ? 'amber' : st==='ready' ? 'blue' : 'gray';
+      const dateText = v.planlananTeslim ? fmtDate(v.planlananTeslim) : 'Tarih yok';
+      let kalanGunText = '';
+      if(v.planlananTeslim){
+        const gun = daysUntil(v.planlananTeslim);
+        const gunLabel = gun < 0 ? Math.abs(gun) + ' gün gecikti' : gun === 0 ? 'bugün' : gun + ' gün kaldı';
+        kalanGunText = ` (<strong>${gunLabel}</strong>)`;
+      }
+      const line = order.vehicleLines.find(l => l.id === v.lineId);
+      const missing = (vehicleMissingItems(v, line) || []).filter(m => !m.startsWith('Ödeme'));
+      const missingText = missing.length ? ` · <span class="missing-text">Eksik: ${missing.join(', ')}</span>` : ' · <span class="t-green">Tüm işlemler tamam</span>';
+      summaryLine = `<span class="dot" style="background:var(--${dot})"></span><strong>Plaka:</strong> ${escapeHtml(v.plakaNo) || 'atanmadı'} · <strong>Araç:</strong> ${escapeHtml(v.marka)} ${escapeHtml(v.model)} · <strong>Teslim tarihi:</strong> ${dateText}${kalanGunText}${missingText}${ikameText}${cekiciBadge(v, ' · ')}`;
+    }
+    const expanded = expandedMainVehicleId === v.id;
+    return `<div class="pay-row main-veh-row ${expanded?'expanded':''}" onclick="event.stopPropagation(); toggleMainVehicle('${v.id}')">${summaryLine}</div>
+    ${expanded ? `<div class="cal-row-editor" onclick="event.stopPropagation()">
+            <div class="editor-actions">
+        <button type="button" class="btn-primary btn-sm" onclick="toggleMainVehicle('${v.id}')">✕ Kapat</button>
+        <button type="button" class="btn-ghost btn-sm" onclick="selectOrder('${order.id}')">Siparişin tamamına git →</button>
+      </div>
+${renderVehicleBlock(order, v)}
+    </div>` : ''}`;
+  }).join('');
+
+  const ikameVerilenler = allVeh.filter(v => v.ikame && v.ikame.verildi);
+  const ikameCount = ikameVerilenler.filter(v => !v.ikame.iadeTarihi).length;
+  const ikadeAlinanCount = ikameVerilenler.filter(v => v.ikame.iadeTarihi).length;
+
+  return `<div class="order-card ${order.id===selectedOrderId?'active':''}">
+    <div class="name" style="cursor:pointer" onclick="selectOrder('${order.id}')">${escapeHtml(order.musteriUnvani || 'İsimsiz müşteri')}</div>
+    <div class="open-counts">
+      <span>Bekleyen araç sayısı: <strong>${pendingCount}</strong></span>
+      <span>Teslim edilen araç sayısı: <strong>${deliveredCount}</strong></span>
+    </div>
+    ${ikameCount > 0 ? `<div class="ikame-summary">🔄 ${ikameCount} araca ikame verildi (iade alınmadı)</div>` : ''}
+    ${ikadeAlinanCount > 0 ? `<div class="ikame-summary ikame-returned">✓ ${ikadeAlinanCount} ikame araç iade alındı</div>` : ''}
+    <div class="kalan-borc ${kalanBorc>0?'debt':'clear'}" style="margin-top:4px">Kalan borç: <strong>${fmtMoney(kalanBorc)} ₺</strong></div>
+    ${debtRows ? `<div class="pay-rows">${debtRows}</div>` : ''}
+    <div class="pay-rows" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">${vehRows}</div>
+  </div>`;
+}
+
+function matchesSearch(o, q){
+  if(!q) return true;
+  const haystack = [o.musteriUnvani, ...o.vehicleLines.map(l=>l.tedarikciUnvani)]
+    .filter(Boolean).join(' ').toLocaleLowerCase('tr-TR');
+  return haystack.includes(q);
+}
+
+let activeTab = 'open';
+
+function setTab(tab){
+  activeTab = tab;
+  renderOrderList();
+}
+
+function renderOrderList(){
+  const q = filters.search.trim().toLocaleLowerCase('tr-TR');
+
+  const allFiltered = state.orders.filter(o => matchesSearch(o,q));
+
+  const openOrders = allFiltered.filter(o => o.vehicles.length > 0 && !o.vehicles.every(v=>v.gerceklesenTeslim));
+  const deliveredOrders = allFiltered.filter(o => o.vehicles.length > 0 && o.vehicles.every(v=>v.gerceklesenTeslim));
+
+  const countOpenEl = document.getElementById('tabCountOpen');
+  const countDeliveredEl = document.getElementById('tabCountDelivered');
+  const countAllEl = document.getElementById('tabCountAll');
+  if(countOpenEl) countOpenEl.textContent = openOrders.length;
+  if(countDeliveredEl) countDeliveredEl.textContent = deliveredOrders.length;
+  if(countAllEl) countAllEl.textContent = allFiltered.length;
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === activeTab);
+  });
+
+  const el = document.getElementById('orderList');
+  if(state.orders.length === 0){
+    el.innerHTML = '<div class="empty">Henüz sipariş yok.<br>Sağ üstten yeni sipariş oluşturun.</div>';
+    return;
+  }
+
+  if(activeTab === 'open'){
+    el.innerHTML = openOrders.length === 0
+      ? '<div class="empty">Aramanıza uyan açık sipariş yok.</div>'
+      : openOrders.map(o => buildUnifiedOrderCard(o, o.vehicles)).join('');
+  } else if(activeTab === 'delivered'){
+    el.innerHTML = deliveredOrders.length === 0
+      ? '<div class="empty">Henüz teslim edilmiş sipariş yok.</div>'
+      : deliveredOrders.map(o => buildUnifiedOrderCard(o, o.vehicles)).join('');
+  } else {
+    el.innerHTML = allFiltered.length === 0
+      ? '<div class="empty">Aramanıza uyan sipariş yok.</div>'
+      : allFiltered.map(o => buildUnifiedOrderCard(o, o.vehicles)).join('');
+  }
+}
+
+function selectOrder(id){
+  selectedOrderId = id;
+  renderOrderList();
+  renderDetail();
+  document.getElementById('detailModalBg').classList.add('open');
+}
+function closeDetailModal(){
+  document.getElementById('detailModalBg').classList.remove('open');
+}
+
+let confirmDeleteId = null;
+
+function askDeleteOrder(orderId){
+  confirmDeleteId = orderId;
+  renderDetail();
+}
+function cancelDeleteOrder(){
+  confirmDeleteId = null;
+  renderDetail();
+}
+function deleteOrder(orderId){
+  const order = state.orders.find(o => o.id === orderId);
+  if(order) order.vehicles.forEach(v => dirtyVehicles.delete(v.id));
+  state.orders = state.orders.filter(o => o.id !== orderId);
+  if(selectedOrderId === orderId){
+    selectedOrderId = null;
+    closeDetailModal();
+  }
+  confirmDeleteId = null;
+  saveState();
+  render();
+  toast('Sipariş silindi');
+}
+
+let confirmDeleteLineId = null;
+function askDeleteLine(lineId){
+  confirmDeleteLineId = lineId;
+  render(); refreshCalendarsIfOpen();
+}
+function cancelDeleteLine(){
+  confirmDeleteLineId = null;
+  render(); refreshCalendarsIfOpen();
+}
+function deleteLine(orderId, lineId){
+  const o = state.orders.find(o=>o.id===orderId);
+  if(!o) return;
+  o.vehicles.filter(v=>v.lineId===lineId).forEach(v=>dirtyVehicles.delete(v.id));
+  o.vehicles = o.vehicles.filter(v=>v.lineId!==lineId);
+  o.vehicleLines = o.vehicleLines.filter(l=>l.id!==lineId);
+  confirmDeleteLineId = null;
+  saveState(); render(); refreshCalendarsIfOpen();
+  toast('Kalem silindi');
+}
+
+let confirmDeleteVehicleId = null;
+function askDeleteVehicle(vehId){
+  confirmDeleteVehicleId = vehId;
+  render(); refreshCalendarsIfOpen();
+}
+function cancelDeleteVehicle(){
+  confirmDeleteVehicleId = null;
+  render(); refreshCalendarsIfOpen();
+}
+function deleteVehicle(orderId, vehId){
+  const o = state.orders.find(o=>o.id===orderId);
+  if(!o) return;
+  const v = o.vehicles.find(v=>v.id===vehId);
+  if(v){
+    const line = o.vehicleLines.find(l=>l.id===v.lineId);
+    o.vehicles = o.vehicles.filter(v=>v.id!==vehId);
+    dirtyVehicles.delete(vehId);
+    if(line){
+      line.adet = Math.max(line.adet - 1, 0);
+      if(line.adet === 0){
+        o.vehicleLines = o.vehicleLines.filter(l=>l.id!==line.id);
+      }
+    }
+  }
+  confirmDeleteVehicleId = null;
+  saveState(); render(); refreshCalendarsIfOpen();
+  toast('Araç silindi');
+}
+
+function renderDetail(){
+  const el = document.getElementById('detailPanel');
+  const order = state.orders.find(o => o.id === selectedOrderId);
+  if(!order){
+    el.innerHTML = '<div class="empty">Detayları görmek için soldan bir sipariş seçin.</div>';
+    return;
+  }
+  const totalBedel = order.vehicleLines.reduce((s,l)=> s + (l.adet * l.birimBedel), 0);
+  el.innerHTML = `
+    <div class="detail-head">
+      <div>
+        <h2>${escapeHtml(order.musteriUnvani)}</h2>
+        <div class="sub">Oluşturma: ${fmtDate(order.olusturmaTarihi)} · Toplam bedel: ${totalBedel.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</div>
+      </div>
+      ${confirmDeleteId === order.id
+        ? `<div class="confirm-row"><span>Emin misiniz? Bu işlem geri alınamaz.</span><button class="btn-ghost btn-sm" onclick="cancelDeleteOrder()">Vazgeç</button><button class="btn-primary btn-sm btn-danger-solid" onclick="deleteOrder('${order.id}')">Evet, sil</button></div>`
+        : `<button class="btn-ghost btn-sm btn-danger" onclick="askDeleteOrder('${order.id}')">Siparişi sil</button>`}
+    </div>
+
+    <div class="section-title">Araç kalemleri</div>
+    <table>
+      <tr><th>Marka</th><th>Model</th><th>Adet</th><th>Birim bedel</th><th>Tedarikçi</th><th></th></tr>
+      ${order.vehicleLines.map(l => `<tr><td>${escapeHtml(l.marka)}</td><td>${escapeHtml(l.model)}</td><td>${l.adet}</td><td>${l.birimBedel.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</td><td>${escapeHtml(l.tedarikciUnvani)||'—'}</td>
+        <td>${confirmDeleteLineId === l.id
+          ? `<span class="mini-confirm">Emin misiniz? <button class="btn-ghost btn-sm" onclick="cancelDeleteLine()">Vazgeç</button><button class="btn-primary btn-sm btn-danger-solid" onclick="deleteLine('${order.id}','${l.id}')">Sil</button></span>`
+          : `<button class="pay-item-remove" title="Kalemi sil" onclick="askDeleteLine('${l.id}')">×</button>`}</td>
+      </tr>`).join('')}
+    </table>
+    <button class="btn-ghost btn-sm" style="margin-top:8px" onclick="openAddLineModal('${order.id}')">+ Araç kalemi ekle</button>
+
+    ${renderPaymentSchedule(order)}
+
+    <div class="section-title">Ödeme — tedarikçi bazında</div>
+    ${order.vehicleLines.map(l => renderPaymentBlock(order, l)).join('')}
+
+    <div class="section-title">Araçlar — hazırlık ve teslim</div>
+    ${order.vehicles.length > 0
+      ? order.vehicles.map(v => renderVehicleBlock(order, v)).join('')
+      : '<div class="empty">Bu siparişte araç yok.</div>'}
+  `;
+}
+
+function buildPaymentSchedule(order){
+  const events = [];
+  order.vehicleLines.forEach(l => {
+    lineInstallments(l).forEach(inst => {
+      events.push({ tedarikci: l.tedarikciUnvani, tutar: inst.tutar || 0, kalan: inst.kalan || 0, tarih: inst.tarih, durum: inst.durum });
+    });
+  });
+  events.sort((a,b) => String(a.tarih||'').localeCompare(String(b.tarih||'')));
+  return events;
+}
+
+function renderPaymentSchedule(order){
+  const events = buildPaymentSchedule(order);
+  if(events.length === 0) return '';
+  const totalPlan = events.reduce((s,e)=>s+e.tutar,0);
+  const totalKalan = events.reduce((s,e)=>s+e.kalan,0);
+  const rows = events.map(e => `<tr>
+    <td>${fmtDate(e.tarih)}</td>
+    <td>${escapeHtml(e.tedarikci) || '—'}</td>
+    <td>${e.tutar.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</td>
+    <td>${e.kalan.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</td>
+    <td><span class="badge ${STATUS_CLASS[e.durum]}" style="margin-top:0">${STATUS_LABEL[e.durum]}</span></td>
+  </tr>`).join('');
+  return `<div class="section-title">Ödeme takvimi</div>
+    <table>
+      <tr><th>Tarih</th><th>Tedarikçi</th><th>Tutar</th><th>Kalan</th><th>Durum</th></tr>
+      ${rows}
+    </table>
+    <div class="pay-summary">Toplam plan: ${totalPlan.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺ · Kalan tutar: <strong>${totalKalan.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</strong></div>`;
+}
+
+function renderPaymentBlock(order, l){
+  const st = lineStatus(l);
+  const total = lineTotal(l);
+  const planToplam = linePlanToplam(l);
+  const odenenToplam = lineOdenenToplam(l);
+  const kalan = lineKalanTutar(l);
+  const planRows = (l.odeme.planlar||[]).map(p => `
+    <div class="pay-item-row">
+      <input type="date" min="2015-01-01" max="2099-12-31" value="${p.tarih||''}" onblur="updatePlanItem('${order.id}','${l.id}','${p.id}','tarih', this.value||null)">
+      <input type="text" inputmode="numeric" value="${fmtMoney(p.tutar)}" oninput="formatMoneyInput(this)" onblur="updatePlanItem('${order.id}','${l.id}','${p.id}','tutar', parseMoney(this.value)||0)">
+      <button type="button" class="pay-item-remove" onclick="removePlanItem('${order.id}','${l.id}','${p.id}')">×</button>
+    </div>`).join('');
+  const odemeRows = (l.odeme.odemeler||[]).map(p => `
+    <div class="pay-item-row">
+      <input type="date" min="2015-01-01" max="${todayISO()}" value="${p.tarih||''}" onblur="updateOdemeItem('${order.id}','${l.id}','${p.id}','tarih', this.value||null)">
+      <input type="text" inputmode="numeric" value="${fmtMoney(p.tutar)}" oninput="formatMoneyInput(this)" onblur="updateOdemeItem('${order.id}','${l.id}','${p.id}','tutar', parseMoney(this.value)||0)">
+      <button type="button" class="pay-item-remove" onclick="removeOdemeItem('${order.id}','${l.id}','${p.id}')">×</button>
+    </div>`).join('');
+  return `<div class="pay-block">
+    <div class="pay-head">
+      <span>${escapeHtml(l.tedarikciUnvani) || 'Tedarikçi belirtilmedi'}</span>
+      <span class="veh-count">${escapeHtml(l.marka)} ${escapeHtml(l.model)} · ${l.adet} adet · Toplam: ${total.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺ · Kalan: <strong>${kalan.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</strong></span>
+      <span class="badge ${STATUS_CLASS[st]}" style="margin-top:0">${STATUS_LABEL[st]}</span>
+    </div>
+    <div class="pay-cols">
+      <div class="pay-col pay-col-plan">
+        <div class="pay-col-title">📋 Ödeme planı <span class="hint">(planlanan — borcu etkilemez)</span></div>
+        <div class="hint" style="margin-bottom:6px">Toplam: ${planToplam.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</div>
+        <div class="pay-items">${planRows || '<div class="hint">Henüz plan girilmedi</div>'}</div>
+        <div class="plan-actions">
+          <button type="button" class="btn-ghost btn-sm" onclick="addPlanItem('${order.id}','${l.id}')">+ Plana tarih ekle</button>
+          <button type="button" class="btn-primary btn-sm" onclick="savePlanNow('${order.id}','${l.id}')">Planı kaydet</button>
+        </div>
+        ${typeof isPlanDirty === 'function' && isPlanDirty(order.id, l.id) ? '<div class="plan-dirty">Kaydedilmedi — "Planı kaydet"e basın</div>' : ''}
+      </div>
+      <div class="pay-col pay-col-actual">
+        <div class="pay-col-title">💰 Yapılan ödemeler <span class="hint">(gerçekleşen — borçtan düşer)</span></div>
+        <div class="hint" style="margin-bottom:6px">Toplam: ${odenenToplam.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</div>
+        <div class="pay-items">${odemeRows || '<div class="hint">Henüz ödeme girilmedi</div>'}</div>
+        <button type="button" class="btn-primary btn-sm" onclick="addOdemeItem('${order.id}','${l.id}')">+ Yapılan ödeme ekle</button>
+      </div>
+    </div>
+    <div class="pay-summary">Kalan tutar: <strong>${kalan.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</strong></div>
+    ${planToplam !== total ? `<div class="plan-match-note mismatch">Ödeme planı toplamı (${planToplam.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺) araç bedeliyle (${total.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺) eşleşmiyor — fark: ${Math.abs(total-planToplam).toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺</div>` : ''}
+  </div>`;
+}
+
+function addPlanItem(orderId, lineId){
+  const o = state.orders.find(o=>o.id===orderId);
+  const l = o.vehicleLines.find(l=>l.id===lineId);
+  l.odeme.planlar.push({ id: uid(), tarih: null, tutar: 0 });
+  saveState(); render(); refreshCalendarsIfOpen();
+}
+function updatePlanItem(orderId, lineId, itemId, field, value){
+  const o = state.orders.find(o=>o.id===orderId);
+  const l = o.vehicleLines.find(l=>l.id===lineId);
+  const p = l.odeme.planlar.find(p=>p.id===itemId);
+  if(p) p[field] = value;
+  saveState(); render(); refreshCalendarsIfOpen();
+}
+function removePlanItem(orderId, lineId, itemId){
+  const o = state.orders.find(o=>o.id===orderId);
+  const l = o.vehicleLines.find(l=>l.id===lineId);
+  l.odeme.planlar = l.odeme.planlar.filter(p=>p.id!==itemId);
+  saveState(); render(); refreshCalendarsIfOpen();
+}
+function addOdemeItem(orderId, lineId){
+  const o = state.orders.find(o=>o.id===orderId);
+  const l = o.vehicleLines.find(l=>l.id===lineId);
+  l.odeme.odemeler.push({ id: uid(), tarih: todayISO(), tutar: 0 });
+  saveState(); render(); refreshCalendarsIfOpen();
+}
+function updateOdemeItem(orderId, lineId, itemId, field, value){
+  const o = state.orders.find(o=>o.id===orderId);
+  const l = o.vehicleLines.find(l=>l.id===lineId);
+  const p = l.odeme.odemeler.find(p=>p.id===itemId);
+  if(p) p[field] = value;
+  saveState(); render(); refreshCalendarsIfOpen();
+}
+function removeOdemeItem(orderId, lineId, itemId){
+  const o = state.orders.find(o=>o.id===orderId);
+  const l = o.vehicleLines.find(l=>l.id===lineId);
+  l.odeme.odemeler = l.odeme.odemeler.filter(p=>p.id!==itemId);
+  saveState(); render(); refreshCalendarsIfOpen();
+}
+
+function renderVehicleBlock(order, v){
+  const st = vehicleStatus(v);
+  const line = order.vehicleLines.find(l => l.id === v.lineId);
+  const dirty = dirtyVehicles.has(v.id);
+  const items = [
+    ['plaka','Plaka işlemi'], ['hgs','HGS işlemi'], ['gps','GPS montajı'], ['utts','UTTS montajı']
+  ];
+  return `<div class="veh-block ${dirty?'dirty':''}">
+    <div class="veh-head">
+      <div>
+        <span class="plate">${escapeHtml(v.plakaNo) || 'Plaka atanmadı'}</span>
+        <span style="color:var(--ink-muted);font-size:12px;margin-left:8px">${escapeHtml(v.marka)} ${escapeHtml(v.model)} · ${escapeHtml(line ? line.tedarikciUnvani : '')}${v.teslimYeri ? ' · ' + escapeHtml(v.teslimYeri) : ''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="badge ${STATUS_CLASS[st]}">${STATUS_LABEL[st]}</span>
+        ${confirmDeleteVehicleId === v.id
+          ? `<span class="mini-confirm">Emin misiniz? <button class="btn-ghost btn-sm" onclick="cancelDeleteVehicle()">Vazgeç</button><button class="btn-primary btn-sm btn-danger-solid" onclick="deleteVehicle('${order.id}','${v.id}')">Sil</button></span>`
+          : `<button class="pay-item-remove" title="Bu aracı sil" onclick="askDeleteVehicle('${v.id}')">×</button>`}
+      </div>
+    </div>
+    <div class="field-group supplier-group">
+      <div class="field-group-title">Tedarikçi bilgileri</div>
+      <div class="deliver-row" style="margin-bottom:0">
+        <div><label>Planlanan Tedarikçi Teslim Tarihi</label>
+          <input type="date" min="2015-01-01" max="2099-12-31" value="${v.tedarikTarihi || ''}" onblur="updateVehicle('${order.id}','${v.id}','tedarikTarihi', this.value || null)"></div>
+        <div><label>Tedarik yeri</label><input type="text" placeholder="Örn. Ankara Depo" value="${escapeHtml(v.tedarikYeri)}" onchange="updateVehicle('${order.id}','${v.id}','tedarikYeri', this.value)"></div>
+        <div><label>&nbsp;</label><label class="checkbox-label"><input type="checkbox" ${v.cekiciKullanildi ? 'checked' : ''} onchange="updateVehicle('${order.id}','${v.id}','cekiciKullanildi', this.checked)"> Çekici kullanıldı</label></div>
+      </div>
+    </div>
+    <div class="field-group customer-group">
+      <div class="field-group-title">Müşteriye teslim bilgileri</div>
+      <div class="deliver-row" style="margin-bottom:0">
+        <div><label>Planlanan Müşteriye Teslim Tarihi</label><input type="date" min="2015-01-01" max="2099-12-31" value="${v.planlananTeslim || ''}" onblur="updateVehicle('${order.id}','${v.id}','planlananTeslim', this.value || null)"></div>
+        <div><label>Teslim yeri</label><input type="text" placeholder="Örn. İstanbul Depo" value="${escapeHtml(v.teslimYeri)}" onchange="updateVehicle('${order.id}','${v.id}','teslimYeri', this.value)"></div>
+      </div>
+    </div>
+    ${(v.tedarikTarihi && v.planlananTeslim && v.tedarikTarihi > v.planlananTeslim) ? `<div class="plan-match-note mismatch">⚠ Planlanan Tedarikçi Teslim Tarihi, Planlanan Müşteriye Teslim Tarihinden sonra — bu tarihleri kontrol edin.</div>` : ''}
+    <div class="ssh-grid">
+      ${items.map(([key,label]) => `
+        <div class="ssh-item">
+          <label class="checkbox-item" title="${(key==='plaka'||v.ssh.plaka.yapildi) ? '' : 'Önce Plaka işlemi tamamlanmalı'}"><input type="checkbox" ${v.ssh[key].yapildi?'checked':''} ${(key==='plaka'||v.ssh.plaka.yapildi)?'':'disabled'} onchange="updateSSH('${order.id}','${v.id}','${key}','yapildi', this.checked)"> ${label}</label>
+          ${(key!=='plaka' && !v.ssh.plaka.yapildi) ? `<div class="hint">Önce Plaka</div>` : ''}
+          ${v.ssh[key].yapildi ? `
+            ${key==='plaka' ? `<input type="text" value="${escapeHtml(v.plakaNo)}" placeholder="34 ABC 123" onchange="updateVehicle('${order.id}','${v.id}','plakaNo', this.value)">` : ''}
+            <input type="date" min="2015-01-01" max="${todayISO()}" value="${v.ssh[key].tarih || ''}" onblur="updateSSH('${order.id}','${v.id}','${key}','tarih', this.value || null)">` : ''}
+        </div>`).join('')}
+    </div>
+    <div class="ikame-block">
+      <label class="checkbox-item"><input type="checkbox" ${(v.teslimAlindi&&v.teslimAlindi.alindi)?'checked':''} onchange="toggleTeslimAlindi('${order.id}','${v.id}', this.checked)"> Teslim alındı</label>
+      ${(v.teslimAlindi && v.teslimAlindi.alindi) ? `
+      <div class="field" style="max-width:220px;margin-top:8px"><label>Teslim alınma tarihi</label>
+        <input type="date" min="2015-01-01" max="${todayISO()}" value="${v.teslimAlindi.tarih||''}" onblur="updateTeslimAlindi('${order.id}','${v.id}','tarih', this.value||null)"></div>` : ''}
+    </div>
+    <div class="deliver-row">
+      <div class="ssh-item">
+        <label class="checkbox-item" title="${(v.teslimAlindi&&v.teslimAlindi.alindi) ? '' : 'Önce Teslim alındı işaretlenmeli'}"><input type="checkbox" ${v.gerceklesenTeslim?'checked':''} ${(v.teslimAlindi&&v.teslimAlindi.alindi)?'':'disabled'} onchange="toggleTeslimYapildi('${order.id}','${v.id}', this.checked)"> Teslimat yapıldı</label>
+        ${!(v.teslimAlindi&&v.teslimAlindi.alindi) ? `<div class="hint">Önce "Teslim alındı" işaretlenmeli</div>` : ''}
+        ${v.gerceklesenTeslim ? `<input type="date" min="2015-01-01" max="${todayISO()}" value="${v.gerceklesenTeslim}" onblur="updateVehicle('${order.id}','${v.id}','gerceklesenTeslim', this.value || null)">` : ''}
+      </div>
+    </div>
+    <div class="ikame-block">
+      <label class="checkbox-item"><input type="checkbox" ${(v.ikame&&v.ikame.verildi)?'checked':''} onchange="toggleIkameVerildi('${order.id}','${v.id}', this.checked)"> İkame araç verildi</label>
+      ${(v.ikame && v.ikame.verildi) ? `
+      <div class="deliver-row" style="margin-top:8px">
+        <div><label>İkame verilme tarihi</label><input type="date" min="2015-01-01" max="${todayISO()}" value="${v.ikame.tarih||''}" onblur="updateIkame('${order.id}','${v.id}','tarih', this.value||null)"></div>
+        <div><label>İkame plaka</label><input type="text" placeholder="34 XYZ 999" value="${escapeHtml(v.ikame.plaka)}" onchange="updateIkame('${order.id}','${v.id}','plaka', this.value)"></div>
+      </div>
+      <div class="deliver-row" style="margin-top:8px">
+        <div><label>İkame araç iade tarihi</label><input type="date" min="2015-01-01" max="2099-12-31" value="${v.ikame.iadeTarihi||''}" onblur="updateIkame('${order.id}','${v.id}','iadeTarihi', this.value||null)"></div>
+      </div>
+      ${v.ikame.iadeTarihi ? `<div class="hint" style="color:var(--green);font-weight:600;margin-top:4px">✓ İkame iade alındı (${fmtDate(v.ikame.iadeTarihi)})</div>` : ''}` : ''}
+    </div>
+    <div class="veh-footer">
+      ${dirty ? '<span class="unsaved-hint">Kaydediliyor… (birkaç saniye içinde otomatik)</span>' : '<span class="unsaved-hint saved">Kaydedildi</span>'}
+      <button class="btn-sm ${dirty ? 'btn-primary' : 'btn-ghost'}" onclick="saveVehicle('${v.id}')">${dirty ? 'Kaydet' : 'Kaydedildi'}</button>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let dirtyVehicles = new Set();
+let vehicleAutosaveTimer = null;
+
+function refreshCalendarsIfOpen(){
+  if(document.getElementById('calModalBg').classList.contains('open')) renderCalendarReport();
+  if(document.getElementById('tedarikModalBg').classList.contains('open')) renderTedarikReport();
+  if(document.getElementById('unifiedModalBg').classList.contains('open')) renderUnifiedReport();
+  if(document.getElementById('paymentCalModalBg').classList.contains('open')) renderPaymentCalendarReport();
+}
+
+function scheduleVehicleAutosave(){
+  clearTimeout(vehicleAutosaveTimer);
+  vehicleAutosaveTimer = setTimeout(async () => {
+    const ok = await saveState();
+    if(ok){
+      dirtyVehicles.clear();
+      render();
+      refreshCalendarsIfOpen();
+    }
+  }, 1500);
+}
+
+function updateVehicle(orderId, vehId, field, value){
+  const o = state.orders.find(o=>o.id===orderId);
+  const v = o.vehicles.find(v=>v.id===vehId);
+  v[field] = value;
+  dirtyVehicles.add(vehId);
+  render();
+  refreshCalendarsIfOpen();
+  scheduleVehicleAutosave();
+}
+function toggleTeslimYapildi(orderId, vehId, yapildi){
+  if(yapildi){
+    const o = state.orders.find(o=>o.id===orderId);
+    const v = o.vehicles.find(v=>v.id===vehId);
+    updateVehicle(orderId, vehId, 'gerceklesenTeslim', v.gerceklesenTeslim || todayISO());
+  } else {
+    updateVehicle(orderId, vehId, 'gerceklesenTeslim', null);
+  }
+}
+function updateIkame(orderId, vehId, field, value){
+  const o = state.orders.find(o=>o.id===orderId);
+  const v = o.vehicles.find(v=>v.id===vehId);
+  v.ikame = v.ikame || { verildi:false, tarih:null, plaka:'', iadeTarihi:null };
+  v.ikame[field] = value;
+  dirtyVehicles.add(vehId);
+  render();
+  refreshCalendarsIfOpen();
+  scheduleVehicleAutosave();
+}
+function toggleIkameVerildi(orderId, vehId, verildi){
+  const o = state.orders.find(o=>o.id===orderId);
+  const v = o.vehicles.find(v=>v.id===vehId);
+  v.ikame = v.ikame || { verildi:false, tarih:null, plaka:'', iadeTarihi:null };
+  v.ikame.verildi = verildi;
+  if(verildi){ if(!v.ikame.tarih) v.ikame.tarih = todayISO(); }
+  else { v.ikame.tarih = null; }
+  dirtyVehicles.add(vehId);
+  render();
+  refreshCalendarsIfOpen();
+  scheduleVehicleAutosave();
+}
+function updateTeslimAlindi(orderId, vehId, field, value){
+  const o = state.orders.find(o=>o.id===orderId);
+  const v = o.vehicles.find(v=>v.id===vehId);
+  v.teslimAlindi = v.teslimAlindi || { alindi:false, tarih:null };
+  v.teslimAlindi[field] = value;
+  dirtyVehicles.add(vehId);
+  render();
+  refreshCalendarsIfOpen();
+  scheduleVehicleAutosave();
+}
+function toggleTeslimAlindi(orderId, vehId, alindi){
+  const o = state.orders.find(o=>o.id===orderId);
+  const v = o.vehicles.find(v=>v.id===vehId);
+  v.teslimAlindi = v.teslimAlindi || { alindi:false, tarih:null };
+  v.teslimAlindi.alindi = alindi;
+  if(alindi){ if(!v.teslimAlindi.tarih) v.teslimAlindi.tarih = todayISO(); }
+  else {
+    v.teslimAlindi.tarih = null;
+    v.gerceklesenTeslim = null;
+  }
+  dirtyVehicles.add(vehId);
+  render();
+  refreshCalendarsIfOpen();
+  scheduleVehicleAutosave();
+}
+function updateSSH(orderId, vehId, key, field, value){
+  const o = state.orders.find(o=>o.id===orderId);
+  const v = o.vehicles.find(v=>v.id===vehId);
+  if(field === 'yapildi'){
+    v.ssh[key].yapildi = value;
+    if(value){ if(!v.ssh[key].tarih) v.ssh[key].tarih = todayISO(); }
+    else {
+      v.ssh[key].tarih = null;
+      if(key === 'plaka'){
+        ['hgs','gps','utts'].forEach(k => { v.ssh[k].yapildi = false; v.ssh[k].tarih = null; });
+      }
+    }
+  } else {
+    v.ssh[key][field] = value;
+  }
+  dirtyVehicles.add(vehId);
+  render();
+  refreshCalendarsIfOpen();
+  scheduleVehicleAutosave();
+}
+async function saveVehicle(vehId){
+  clearTimeout(vehicleAutosaveTimer);
+  const ok = await saveState();
+  if(ok){
+    dirtyVehicles.clear();
+    toast('Araç kaydedildi');
+    render();
+    refreshCalendarsIfOpen();
+  }
+}
+
+let addLineTargetOrderId = null;
+
+function openNewOrderModal(){
+  addLineTargetOrderId = null;
+  document.getElementById('modalTitle').textContent = 'Yeni sipariş';
+  document.getElementById('musteriField').style.display = '';
+  document.getElementById('modalSubmitBtn').textContent = 'Siparişi oluştur';
+  pendingLines = [{marka:'',model:'',adet:1,birimBedel:0,tedarikciUnvani:'',tedarikTarihi:'',tedarikYeri:'',planlananTeslim:'',teslimYeri:'',planlar:[]}];
+  renderMusteriSelect();
+  document.getElementById('f-musteri').value = '';
+  renderLineRows();
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function openAddLineModal(orderId){
+  const order = state.orders.find(o=>o.id===orderId);
+  if(!order) return;
+  addLineTargetOrderId = orderId;
+  document.getElementById('modalTitle').textContent = 'Araç kalemi ekle — ' + order.musteriUnvani;
+  document.getElementById('musteriField').style.display = 'none';
+  document.getElementById('modalSubmitBtn').textContent = 'Kalemi ekle';
+  pendingLines = [{marka:'',model:'',adet:1,birimBedel:0,tedarikciUnvani:'',tedarikTarihi:'',tedarikYeri:'',planlananTeslim:'',teslimYeri:'',planlar:[]}];
+  renderLineRows();
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+
+function renderLineRows(){
+  const el = document.getElementById('lineRows');
+  el.innerHTML = pendingLines.map((l,i) => `
+    <div class="line-card">
+      ${pendingLines.length > 1 ? `<button class="btn-ghost btn-sm remove-line" onclick="removeLineRow(${i})">Kaldır</button>` : ''}
+      <div class="line-row">
+        <div><label>Marka *</label>
+          <div class="select-row">
+            <select onchange="pendingLines[${i}].marka=this.value">
+              <option value="">Seçiniz</option>
+              ${masters.brands.map(b => `<option value="${escapeHtml(b)}" ${l.marka===b?'selected':''}>${escapeHtml(b)}</option>`).join('')}
+            </select>
+            <button type="button" class="btn-ghost btn-sm" onclick="quickAdd('brands')">+</button>
+          </div>
+        </div>
+        <div><label>Model *</label><input type="text" value="${escapeHtml(l.model)}" onchange="pendingLines[${i}].model=this.value"></div>
+        <div><label>Adet</label><input type="number" min="1" value="${l.adet}" onchange="pendingLines[${i}].adet=Number(this.value)"></div>
+        <div><label>Birim bedel (₺) *</label><input type="text" inputmode="numeric" value="${fmtMoney(l.birimBedel)}" oninput="formatMoneyInput(this)" onchange="pendingLines[${i}].birimBedel=parseMoney(this.value)||0"></div>
+      </div>
+      <div class="field-group supplier-group">
+        <div class="field-group-title">Tedarikçi bilgileri</div>
+        <div class="line-row2">
+          <div><label>Tedarikçi unvanı *</label>
+            <div class="select-row">
+              <select onchange="pendingLines[${i}].tedarikciUnvani=this.value">
+                <option value="">Seçiniz</option>
+                ${masters.suppliers.map(s => `<option value="${escapeHtml(s)}" ${l.tedarikciUnvani===s?'selected':''}>${escapeHtml(s)}</option>`).join('')}
+              </select>
+              <button type="button" class="btn-ghost btn-sm" onclick="quickAdd('suppliers')">+</button>
+            </div>
+          </div>
+          <div><label>Planlanan Tedarikçi Teslim Tarihi</label><input type="date" min="2015-01-01" max="2099-12-31" value="${l.tedarikTarihi}" onchange="pendingLines[${i}].tedarikTarihi=this.value"></div>
+        </div>
+        <div class="field" style="margin-bottom:0"><label>Tedarik yeri</label><input type="text" placeholder="Örn. Ankara Depo" value="${escapeHtml(l.tedarikYeri)}" onchange="pendingLines[${i}].tedarikYeri=this.value"></div>
+        <label class="checkbox-label" style="margin-top:8px"><input type="checkbox" ${l.cekiciKullanildi ? 'checked' : ''} onchange="pendingLines[${i}].cekiciKullanildi=this.checked"> Çekici kullanıldı</label>
+      </div>
+      <div class="field-group customer-group">
+        <div class="field-group-title">Müşteriye teslim bilgileri</div>
+        <div class="line-row2" style="margin-bottom:0">
+          <div><label>Planlanan Müşteriye Teslim Tarihi *</label><input type="date" min="2015-01-01" max="2099-12-31" value="${l.planlananTeslim}" onchange="pendingLines[${i}].planlananTeslim=this.value"></div>
+          <div><label>Teslim yeri *</label><input type="text" placeholder="Örn. İstanbul Depo" value="${escapeHtml(l.teslimYeri)}" onchange="pendingLines[${i}].teslimYeri=this.value"></div>
+        </div>
+      </div>
+      <div class="line-plan-block">
+        <div class="plan-header-row">
+          <label>Ödeme planı</label>
+          <div class="plan-add-row">
+            <button type="button" class="btn-ghost btn-sm" onclick="addPendingPlanItem(${i})">+ Boş satır</button>
+            <button type="button" class="btn-primary btn-sm" onclick="addPendingPlanItem(${i}, 'kalan')">+ Kalan bakiyeyi ekle</button>
+          </div>
+        </div>
+        ${(l.planlar||[]).map((p,pi) => `
+          <div class="pay-item-row">
+            <input type="date" min="2015-01-01" max="2099-12-31" value="${p.tarih||''}" onchange="pendingLines[${i}].planlar[${pi}].tarih=this.value">
+            <input type="text" inputmode="numeric" value="${fmtMoney(p.tutar)}" oninput="formatMoneyInput(this)" onchange="pendingLines[${i}].planlar[${pi}].tutar=parseMoney(this.value)||0">
+            <button type="button" class="pay-item-remove" onclick="removePendingPlanItem(${i},${pi})">×</button>
+          </div>`).join('')}
+        ${(() => {
+          const kalemToplam = l.adet * l.birimBedel;
+          const planToplam = (l.planlar||[]).reduce((s,p)=>s+(p.tutar||0),0);
+          const match = planToplam === kalemToplam;
+          return `<div class="plan-match-note ${match ? 'ok' : 'mismatch'}">
+            Kalem toplamı: ${kalemToplam.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺ · Planlanan: ${planToplam.toLocaleString('tr-TR', {maximumFractionDigits:0})} ₺
+            ${match ? ' · Eşleşiyor ✓' : ' · Fark: ' + Math.abs(kalemToplam-planToplam).toLocaleString('tr-TR', {maximumFractionDigits:0}) + ' ₺'}
+          </div>`;
+        })()}
+      </div>
+    </div>
+  `).join('');
+}
+function addPendingPlanItem(i, mode){
+  if(!pendingLines[i].planlar) pendingLines[i].planlar = [];
+  const l = pendingLines[i];
+  let tutar = 0;
+  if(mode === 'kalan'){
+    const kalemToplam = (l.adet||0) * (l.birimBedel||0);
+    const planliToplam = l.planlar.reduce((s,p)=>s+(p.tutar||0),0);
+    tutar = Math.max(kalemToplam - planliToplam, 0);
+  }
+  pendingLines[i].planlar.push({ tarih:'', tutar });
+  renderLineRows();
+}
+function removePendingPlanItem(i, pi){
+  pendingLines[i].planlar.splice(pi,1);
+  renderLineRows();
+}
+function addLineRow(){
+  pendingLines.push({marka:'',model:'',adet:1,birimBedel:0,tedarikciUnvani:'',tedarikTarihi:'',tedarikYeri:'',planlananTeslim:'',teslimYeri:'',planlar:[], cekiciKullanildi:false });
+  renderLineRows();
+}
+function removeLineRow(i){
+  pendingLines.splice(i,1);
+  renderLineRows();
+}
+
+function submitNewOrder(){
+  const addingToOrder = !!addLineTargetOrderId;
+  let musteri = '';
+  if(!addingToOrder){
+    musteri = document.getElementById('f-musteri').value.trim();
+    if(!musteri){ toast('Müşteri unvanı gerekli'); return; }
+  }
+  const validLines = pendingLines.filter(l => l.marka.trim() && l.model.trim() && l.adet > 0);
+  if(validLines.length === 0){ toast('En az bir araç kalemi girin'); return; }
+
+  for(const l of validLines){
+    const label = (l.marka + ' ' + l.model).trim();
+    if(!l.tedarikciUnvani || !l.tedarikciUnvani.trim()){
+      toast(label + ' kalemi için tedarikçi unvanı gerekli'); return;
+    }
+    if(!l.birimBedel || l.birimBedel <= 0){
+      toast(label + ' kalemi için birim bedel gerekli'); return;
+    }
+    if(!l.planlananTeslim){
+      toast(label + ' kalemi için planlanan müşteriye teslim tarihi gerekli'); return;
+    }
+    if(!l.teslimYeri || !l.teslimYeri.trim()){
+      toast(label + ' kalemi için teslim yeri gerekli'); return;
+    }
+    if(l.tedarikTarihi && l.planlananTeslim && l.tedarikTarihi > l.planlananTeslim){
+      toast(label + ' kaleminde Planlanan Tedarikçi Teslim Tarihi, Planlanan Müşteriye Teslim Tarihinden sonra olamaz'); return;
+    }
+  }
+
+  for(const l of validLines){
+    const kalemToplam = l.adet * l.birimBedel;
+    const planToplam = (l.planlar||[]).reduce((s,p)=>s+(p.tutar||0),0);
+    if(planToplam !== kalemToplam){
+      toast((l.tedarikciUnvani || (l.marka+' '+l.model)) + ' kaleminde ödeme planı toplamı (' + planToplam.toLocaleString('tr-TR', {maximumFractionDigits:0}) + ' ₺) araç bedeliyle (' + kalemToplam.toLocaleString('tr-TR', {maximumFractionDigits:0}) + ' ₺) eşleşmiyor');
+      return;
+    }
+  }
+
+  const newLines = [];
+  const newVehicles = [];
+  validLines.forEach(l => {
+    const lineId = uid();
+    newLines.push({
+      id:lineId, marka:l.marka, model:l.model, adet:l.adet, birimBedel:l.birimBedel,
+      tedarikciUnvani: l.tedarikciUnvani,
+      odeme: {
+        planlar: (l.planlar||[]).filter(p=>p.tarih).map(p => ({ id: uid(), tarih: p.tarih, tutar: p.tutar || 0 })),
+        odemeler: []
+      }
+    });
+    for(let i=0;i<l.adet;i++){
+      newVehicles.push({
+        id: uid(), lineId, marka:l.marka, model:l.model, plakaNo:'',
+        planlananTeslim: l.planlananTeslim || null, gerceklesenTeslim:null, teslimYeri: l.teslimYeri || '',
+        tedarikTarihi: l.tedarikTarihi || null,
+        tedarikYeri: l.tedarikYeri || '',
+        ikame: { verildi:false, tarih:null, plaka:'', iadeTarihi:null },
+        teslimAlindi: { alindi:false, tarih:null },
+        ssh: {
+          plaka:{yapildi:false, tarih:null}, hgs:{yapildi:false, tarih:null},
+          gps:{yapildi:false, tarih:null}, utts:{yapildi:false, tarih:null}
+        }
+      });
+    }
+  });
+
+  if(addingToOrder){
+    const order = state.orders.find(o => o.id === addLineTargetOrderId);
+    if(!order){ toast('Sipariş bulunamadı'); return; }
+    order.vehicleLines.push(...newLines);
+    order.vehicles.push(...newVehicles);
+    selectedOrderId = order.id;
+    saveState();
+    closeModal();
+    render();
+    refreshCalendarsIfOpen();
+    toast('Araç kalemi eklendi');
+  } else {
+    const order = {
+      id: uid(),
+      musteriUnvani: musteri,
+      olusturmaTarihi: todayISO(),
+      vehicleLines: newLines,
+      vehicles: newVehicles
+    };
+    state.orders.unshift(order);
+    selectedOrderId = order.id;
+    saveState();
+    closeModal();
+    render();
+    document.getElementById('detailModalBg').classList.add('open');
+    toast('Sipariş oluşturuldu');
+  }
+}
+
+/* ACR: otomatik init devre disi. Kontrol integration.js'te.
+   Ana script yuklendiginde global'ler (state, masters, render...) hazir olur;
+   integration.js installOverrides() ile loadState/loadMasters'i override edip
+   API'den yukler. */
+
+/* ==== ISTEK 2: Ok tuslari + Enter ile alanlar arasi gecis ==== */
+(function installKeyNav(){
+  // Gorunur, etkin form alanlarini DOM sirasina gore topla
+  function navigableFields(container){
+    const sel = 'input:not([type=checkbox]):not([type=radio]):not([disabled]):not([readonly]), select, textarea';
+    return Array.from(container.querySelectorAll(sel)).filter(el => {
+      // gorunur mu? (offsetParent null ise gizli)
+      return el.offsetParent !== null && !el.closest('[style*="display:none"]');
+    });
+  }
+  document.addEventListener('keydown', function(e){
+    const el = e.target;
+    if(!el || !el.matches('input, select, textarea')) return;
+    // checkbox/radio haric
+    if(el.type === 'checkbox' || el.type === 'radio') return;
+
+    const isEnter = e.key === 'Enter';
+    const isDown  = e.key === 'ArrowDown';
+    const isUp    = e.key === 'ArrowUp';
+
+    // Enter: sadece text/date/number/email/password/select alanlarinda ilerlet
+    // (textarea'da Enter yeni satir olsun -> textarea'yi disla)
+    if(isEnter && el.tagName === 'TEXTAREA') return;
+    // date input'ta ok tuslari tarihi degistirir -> ok'lari date'te KULLANMA, sadece Enter
+    if((isDown || isUp) && el.type === 'date') return;
+    // number input'ta ok tuslari degeri degistirir -> sadece Enter
+    if((isDown || isUp) && el.type === 'number') return;
+    // select'te ok tuslari secenek degistirir -> sadece Enter ilerlet
+    if((isDown || isUp) && el.tagName === 'SELECT') return;
+
+    if(!isEnter && !isDown && !isUp) return;
+
+    // Ayni modal/panel/form icindeki alanlari bul
+    const container = el.closest('.modal, form, #detailPanel, body') || document.body;
+    const fields = navigableFields(container);
+    const idx = fields.indexOf(el);
+    if(idx === -1) return;
+
+    let next;
+    if(isUp){ next = fields[idx - 1]; }
+    else    { next = fields[idx + 1]; }  // Enter veya Down
+
+    if(next){
+      e.preventDefault();
+      next.focus();
+      if(next.select) { try { next.select(); } catch(_){} }
+    }
+  });
+})();
+
+window.__acrMainScriptReady = true;
+
+/* ===== ACR ENTEGRASYON (gomulu) ===== */
+/* ============================================================================
+   ACR Filo — Entegrasyon Katmanı (integration.js)
+   Frontend'i API'ye bağlar. api.js ve bridge.js'ten SONRA, ana script'ten
+   ÖNCE yüklenir. Ana script'teki fonksiyonları override eder.
+
+   Strateji (Yol 2): her kullanıcı eylemi anında ilgili API endpoint'ine gider.
+   loadState/loadMasters -> API'den çeker. saveState -> artık no-op (her işlem
+   zaten anında kaydediliyor). Yazma fonksiyonları (submitNewOrder, deleteOrder,
+   saveVehicle, ödemeler, tanımlar) doğrudan API çağırır.
+
+   NOT: Ana script'teki global değişkenler (state, masters, render, toast,
+   selectedOrderId ...) bu dosya yüklendiğinde henüz TANIMLI DEĞİL — çünkü
+   bu dosya ana script'ten önce çalışıyor. Bu yüzden override'ları
+   window.addEventListener('DOMContentLoaded') İÇİNDE, ana script çalıştıktan
+   sonra yapıyoruz. Ana script IIFE init() ile bittiğinde global'ler hazır olur.
+   ============================================================================ */
+
+(function () {
+  'use strict';
+
+  // Ana script'in init()'ini biz kontrol edeceğiz. Orijinal init otomatik
+  // çalışıyor; onu durduramayız ama loadState/loadMasters'ı override ederek
+  // API'ye yönlendiririz. Login yapılmadıysa loadState login ekranı gösterir.
+
+  // --- Login ekranı (DOM'a enjekte) ---
+  function injectLoginScreen() {
+    if (document.getElementById('acrLoginOverlay')) return;
+    const div = document.createElement('div');
+    div.id = 'acrLoginOverlay';
+    div.innerHTML = `
+      <style>
+        #acrLoginOverlay{position:fixed;inset:0;background:#f1f5f9;z-index:99999;
+          display:flex;align-items:center;justify-content:center;font-family:inherit;}
+        #acrLoginBox{background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.12);
+          padding:34px 30px;width:360px;max-width:92vw;}
+        #acrLoginBox h2{margin:0 0 4px;font-size:20px;color:#0f172a;}
+        #acrLoginBox p{margin:0 0 22px;font-size:13px;color:#64748b;}
+        #acrLoginBox label{display:block;font-size:13px;color:#334155;margin:14px 0 6px;font-weight:600;}
+        #acrLoginBox input{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:8px;
+          font-size:14px;box-sizing:border-box;}
+        #acrLoginBox input:focus{outline:none;border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.12);}
+        #acrLoginBtn{width:100%;margin-top:22px;padding:12px;background:#0f766e;color:#fff;border:none;
+          border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;}
+        #acrLoginBtn:hover{background:#115e59;}
+        #acrLoginBtn:disabled{opacity:.6;cursor:default;}
+        #acrLoginErr{color:#dc2626;font-size:13px;margin-top:14px;min-height:18px;}
+      </style>
+      <div id="acrLoginBox">
+        <h2>ACR Filo</h2>
+        <p>Sipariş Yönetim Sistemi — Giriş</p>
+        <label for="acrEmail">E-posta</label>
+        <input id="acrEmail" type="email" autocomplete="username" placeholder="ornek@sirket.com" />
+        <label for="acrPass">Parola</label>
+        <input id="acrPass" type="password" autocomplete="current-password" placeholder="••••••••" />
+        <button id="acrLoginBtn">Giriş Yap</button>
+        <div id="acrLoginErr"></div>
+      </div>`;
+    document.body.appendChild(div);
+
+    const emailEl = div.querySelector('#acrEmail');
+    const passEl = div.querySelector('#acrPass');
+    const btn = div.querySelector('#acrLoginBtn');
+    const err = div.querySelector('#acrLoginErr');
+
+    async function doLogin() {
+      err.textContent = '';
+      const email = emailEl.value.trim();
+      const pass = passEl.value;
+      if (!email || !pass) { err.textContent = 'E-posta ve parola gerekli.'; return; }
+      btn.disabled = true; btn.textContent = 'Giriş yapılıyor...';
+      try {
+        await Api.login(email, pass);
+        div.remove();
+        applyPermissionVisibility();
+        // Giriş başarılı -> veriyi API'den yükle
+        await window.__acrLoadFromApi();
+      } catch (e) {
+        err.textContent = (e && e.message) || 'Giriş başarısız.';
+        btn.disabled = false; btn.textContent = 'Giriş Yap';
+      }
+    }
+    btn.addEventListener('click', doLogin);
+    passEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    emailEl.focus();
+  }
+
+  // --- Yetkiye göre buton gizleme ---
+  function applyPermissionVisibility() {
+    const can = (p) => Api.hasPermission(p);
+    // + Yeni sipariş
+    document.querySelectorAll('[onclick*="openNewOrderModal"]').forEach(el => {
+      el.style.display = can('orders.create') ? '' : 'none';
+    });
+    // Tanımlar (definitions.view)
+    document.querySelectorAll('[onclick*="openDefModal"]').forEach(el => {
+      el.style.display = can('definitions.view') ? '' : 'none';
+    });
+    // (Diğer yetki bazlı gizlemeler ana script render'ında ele alınır)
+  }
+
+  // --- API'den veri yükleme (loadState + loadMasters yerine) ---
+  // Çözüm A: liste çek, sonra her sipariş için detay çek, state.orders'ı doldur.
+  window.__acrLoadFromApi = async function () {
+    if (!Api.isAuthenticated()) { injectLoginScreen(); return; }
+    try {
+      // 1) Tanımları çek
+      const [customers, suppliers, brands] = await Promise.all([
+        Api.listDefinitions('customers').catch(() => []),
+        Api.listDefinitions('suppliers').catch(() => []),
+        Api.listDefinitions('brands').catch(() => []),
+      ]);
+      // masters global'ini doldur (ana script bunu kullanıyor)
+      if (typeof masters !== 'undefined') {
+        masters.customers = (customers || []).map(x => x.ad);
+        masters.suppliers = (suppliers || []).map(x => x.ad);
+        masters.brands = (brands || []).map(x => x.ad);
+      }
+
+      // 2) Tüm siparişleri çek (tab=tumu), sonra her biri için detay
+      const listResp = await Api.listOrders({ tab: 'tumu', pageSize: 200 });
+      const items = (listResp && listResp.items) || [];
+      const details = await Promise.all(
+        items.map(it => Api.getOrder(it.id).catch(e => {
+          console.error('Sipariş detayı alınamadı, id=' + it.id, e);
+          return null;
+        }))
+      );
+      const orders = details.filter(Boolean).map(Bridge.apiOrderToFrontend);
+
+      if (typeof state !== 'undefined') { state.orders = orders; }
+      if (typeof render === 'function') render();
+      if (typeof renderDefinitionLists === 'function') renderDefinitionLists();
+      if (typeof refreshOrderFormSelects === 'function') refreshOrderFormSelects();
+    } catch (e) {
+      console.error('Veri yükleme hatası:', e);
+      if (typeof toast === 'function') toast('Veriler yüklenemedi: ' + (e.message || ''));
+    }
+  };
+
+  // --- Ana script yüklendikten sonra override'ları kur ---
+  function installOverrides() {
+    // loadState / loadMasters -> API'ye yönlendir (ana script bunları init'te çağırıyor,
+    // ama biz zaten kendi yükleyicimizi kullanacağız)
+    loadState = async function () { await window.__acrLoadFromApi(); };
+    loadMasters = async function () { /* __acrLoadFromApi içinde yapılıyor */ };
+
+    // saveState / saveMasters -> no-op (Yol 2: her işlem anında kaydediliyor)
+    saveState = async function () { return true; };
+    saveMasters = async function () { return true; };
+
+    // --- YAZMA fonksiyonlarını API'ye bağla ---
+    wireSubmitNewOrder();
+    wireDeleteOrder();
+    wireDeleteLine();
+    wireDeleteVehicle();
+    wireSaveVehicle();
+    wireVehicleAutosave();
+    wirePlans();
+    wirePayments();
+    wireMasters();
+
+    // İlk yükleme: login kontrolü
+    window.__acrLoadFromApi();
+  }
+
+  // submitNewOrder -> POST /api/orders veya POST /api/orders/{id}/lines
+  function wireSubmitNewOrder() {
+    if (typeof submitNewOrder !== 'function') return;
+    submitNewOrder = async function () {
+      try {
+        const pending = (typeof pendingLines !== 'undefined') ? pendingLines : [];
+        const valid = pending.filter(l => l.marka && l.marka.trim() && l.model && l.model.trim() && l.adet > 0);
+        if (valid.length === 0) { toast('En az bir geçerli kalem girin'); return; }
+
+        // doğrulama (frontend'deki kurallar)
+        for (const l of valid) {
+          const label = (l.marka + ' ' + l.model).trim();
+          if (!l.tedarikciUnvani || !l.tedarikciUnvani.trim()) { toast(label + ': tedarikçi gerekli'); return; }
+          if (!l.birimBedel || l.birimBedel <= 0) { toast(label + ': birim bedel gerekli'); return; }
+          if (!l.planlananTeslim) { toast(label + ': planlanan teslim tarihi gerekli'); return; }
+          if (!l.teslimYeri || !l.teslimYeri.trim()) { toast(label + ': teslim yeri gerekli'); return; }
+          const kalemToplam = l.adet * l.birimBedel;
+          const planToplam = (l.planlar || []).reduce((s, p) => s + (p.tutar || 0), 0);
+          if (planToplam !== kalemToplam) {
+            toast(label + ': ödeme planı toplamı araç bedeliyle eşleşmiyor'); return;
+          }
+        }
+
+        const targetId = (typeof addLineTargetOrderId !== 'undefined') ? addLineTargetOrderId : null;
+        if (targetId) {
+          // var olan siparişe kalem ekle
+          await Api.addLines(targetId, { lines: valid.map(Bridge.frontendLineToCreateRequest) });
+        } else {
+          // yeni sipariş
+          const musteriEl = document.getElementById('f-musteri');
+          const musteri = musteriEl ? musteriEl.value.trim() : '';
+          if (!musteri) { if(typeof toast==='function') toast('Müşteri unvanı gerekli'); return; }
+          const payload = Bridge.frontendOrderToCreateRequest(musteri, valid, null);
+          await Api.createOrder(payload);
+        }
+        if (typeof closeModal === 'function') closeModal();
+        await window.__acrLoadFromApi();
+        toast('Sipariş kaydedildi');
+      } catch (e) {
+        console.error('submitNewOrder hata:', e);
+        toast('Kaydedilemedi: ' + (e.message || ''));
+      }
+    };
+  }
+
+  function wireDeleteOrder() {
+    if (typeof deleteOrder !== 'function') return;
+    deleteOrder = async function (orderId) {
+      try {
+        await Api.deleteOrder(orderId);
+        if (typeof cancelDeleteOrder === 'function') cancelDeleteOrder();
+        if (typeof closeDetailModal === 'function') closeDetailModal();
+        await window.__acrLoadFromApi();
+        toast('Sipariş silindi');
+      } catch (e) { console.error('deleteOrder hata:', e); toast('Silinemedi: ' + (e.message || '')); }
+    };
+  }
+
+  function wireDeleteLine() {
+    if (typeof deleteLine !== 'function') return;
+    deleteLine = async function (orderId, lineId) {
+      try {
+        await Api.deleteLine(orderId, lineId);
+        if (typeof cancelDeleteLine === 'function') cancelDeleteLine();
+        await window.__acrLoadFromApi();
+        toast('Kalem silindi');
+      } catch (e) { console.error('deleteLine hata:', e); toast('Silinemedi: ' + (e.message || '')); }
+    };
+  }
+
+  function wireDeleteVehicle() {
+    if (typeof deleteVehicle !== 'function') return;
+    deleteVehicle = async function (orderId, vehId) {
+      // API'de tek araç silme endpoint'i yok (araçlar adet üzerinden yönetiliyor).
+      // Kalem adedini düşürmek gerekir -> şimdilik kullanıcıyı bilgilendir.
+      toast('Araç silme, kalem adedi güncellenerek yapılır (yakında)');
+      console.warn('deleteVehicle: API endpoint yok, kalem adeti güncellenmelidir');
+    };
+  }
+
+  function wireSaveVehicle() {
+    if (typeof saveVehicle !== 'function') return;
+    saveVehicle = async function (vehId) {
+      try {
+        // vehId hangi siparişte? state.orders içinde bul
+        let order = null, vehicle = null;
+        for (const o of state.orders) {
+          const v = (o.vehicles || []).find(x => x.id === vehId);
+          if (v) { order = o; vehicle = v; break; }
+        }
+        if (!order || !vehicle) { console.warn('saveVehicle: araç bulunamadı', vehId); return; }
+        const payload = Bridge.frontendVehicleToUpdateRequest(vehicle);
+        const updated = await Api.updateVehicle(order.id, vehicle.id, payload);
+        // dönen güncel aracı state'e yaz (rowVersion tazelensin)
+        const fresh = Bridge.apiVehicleToFrontend(updated);
+        const idx = order.vehicles.findIndex(x => x.id === vehId);
+        if (idx >= 0) order.vehicles[idx] = fresh;
+        if (typeof render === 'function') render();
+        if (typeof refreshCalendarsIfOpen === 'function') refreshCalendarsIfOpen();
+      } catch (e) {
+        console.error('saveVehicle hata:', e);
+        toast('Araç kaydedilemedi: ' + (e.message || ''));
+      }
+    };
+  }
+
+  // Otomatik kaydetme: kullanici alan degistirince (updateVehicle/updateSSH/...)
+  // scheduleVehicleAutosave cagriliyor. Orijinali no-op saveState'e gidiyordu.
+  // Biz override edip dirty araclari API'ye gonderiyoruz.
+  function wireVehicleAutosave() {
+    if (typeof scheduleVehicleAutosave !== 'function') return;
+    scheduleVehicleAutosave = function () {
+      clearTimeout(vehicleAutosaveTimer);
+      vehicleAutosaveTimer = setTimeout(async () => {
+        if (typeof dirtyVehicles === 'undefined' || dirtyVehicles.size === 0) return;
+        // dirty araclarin her birini API'ye gonder
+        const ids = Array.from(dirtyVehicles);
+        for (const vehId of ids) {
+          try {
+            // araci ve siparisini bul
+            let order = null, vehicle = null;
+            for (const o of state.orders) {
+              const v = (o.vehicles || []).find(x => x.id === vehId);
+              if (v) { order = o; vehicle = v; break; }
+            }
+            if (!order || !vehicle) { dirtyVehicles.delete(vehId); continue; }
+            const payload = Bridge.frontendVehicleToUpdateRequest(vehicle);
+            const updated = await Api.updateVehicle(order.id, vehicle.id, payload);
+            // donen guncel araci state'e yaz (rowVersion tazelensin)
+            const fresh = Bridge.apiVehicleToFrontend(updated);
+            const idx = order.vehicles.findIndex(x => x.id === vehId);
+            if (idx >= 0) order.vehicles[idx] = fresh;
+            dirtyVehicles.delete(vehId);
+          } catch (e) {
+            console.error('Otomatik kayit hatasi, arac id=' + vehId, e);
+            if (typeof toast === 'function') toast('Kaydedilemedi: ' + (e.message || ''));
+            // hatali araci dirty birak ki tekrar denenebilsin
+          }
+        }
+        if (typeof render === 'function') render();
+        if (typeof refreshCalendarsIfOpen === 'function') refreshCalendarsIfOpen();
+      }, 1200);
+    };
+  }
+
+  // ---- Ödeme planı (planlanan taksitler) ----
+  // Otomatik kayit YOK: kullanici "Planı kaydet" butonuna basinca gonderilir.
+  // API kurali: plan toplami = adet x birim bedel (eslesmezse sunucu reddeder).
+  window.__acrDirtyPlans = window.__acrDirtyPlans || new Set();
+  const planKey = (o, l) => String(o) + '|' + String(l);
+
+  window.isPlanDirty = function (orderId, lineId) {
+    return window.__acrDirtyPlans.has(planKey(orderId, lineId));
+  };
+
+  window.savePlanNow = async function (orderId, lineId) {
+    try {
+      const o = state.orders.find(x => x.id === orderId);
+      const l = o && o.vehicleLines.find(x => x.id === lineId);
+      if (!l) { if (typeof toast === 'function') toast('Kalem bulunamadı'); return; }
+
+      const planlar = (l.odeme.planlar || [])
+        .filter(p => p.tarih && Number(p.tutar) > 0)
+        .map(p => ({ tarih: p.tarih, tutar: Number(p.tutar) }));
+
+      const kalemToplam = Number(l.adet) * Number(l.birimBedel);
+      const planToplam = planlar.reduce((t, p) => t + p.tutar, 0);
+      if (planToplam !== kalemToplam) {
+        const f = n => n.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+        if (typeof toast === 'function')
+          toast(`Plan toplamı (${f(planToplam)} ₺) araç bedeliyle (${f(kalemToplam)} ₺) eşleşmiyor`);
+        return;
+      }
+
+      if (typeof Api.updatePlans !== 'function') {
+        if (typeof toast === 'function') toast('api.js güncel değil — yeni dosyaları yükleyin');
+        console.error('Api.updatePlans yok: sunucudaki api.js eski.');
+        return;
+      }
+
+      const updated = await Api.updatePlans(orderId, lineId, planlar);
+      const fresh = Bridge.apiOrderToFrontend(updated);
+      const idx = state.orders.findIndex(x => x.id === fresh.id);
+      if (idx >= 0) state.orders[idx] = fresh;
+
+      window.__acrDirtyPlans.delete(planKey(orderId, lineId));
+      if (typeof render === 'function') render();
+      if (typeof refreshCalendarsIfOpen === 'function') refreshCalendarsIfOpen();
+      if (typeof toast === 'function') toast('Ödeme planı kaydedildi');
+    } catch (e) {
+      console.error('savePlanNow hata:', e);
+      if (typeof toast === 'function') toast('Ödeme planı kaydedilemedi: ' + (e.message || ''));
+    }
+  };
+
+  function markPlanDirty(orderId, lineId) {
+    window.__acrDirtyPlans.add(planKey(orderId, lineId));
+  }
+
+  function wirePlans() {
+    if (typeof addPlanItem === 'function') {
+      addPlanItem = function (orderId, lineId) {
+        const o = state.orders.find(x => x.id === orderId);
+        const l = o && o.vehicleLines.find(x => x.id === lineId);
+        if (!l) return;
+        l.odeme.planlar.push({ id: 'yeni-' + Date.now(), tarih: null, tutar: 0 });
+        markPlanDirty(orderId, lineId);
+        if (typeof render === 'function') render();
+      };
+    }
+    if (typeof updatePlanItem === 'function') {
+      updatePlanItem = function (orderId, lineId, itemId, field, value) {
+        const o = state.orders.find(x => x.id === orderId);
+        const l = o && o.vehicleLines.find(x => x.id === lineId);
+        const pl = l && l.odeme.planlar.find(x => x.id === itemId);
+        if (!pl) return;
+        pl[field] = (field === 'tutar') ? (parseFloat(value) || 0) : value;
+        markPlanDirty(orderId, lineId);
+        if (typeof render === 'function') render();
+      };
+    }
+    if (typeof removePlanItem === 'function') {
+      removePlanItem = function (orderId, lineId, itemId) {
+        const o = state.orders.find(x => x.id === orderId);
+        const l = o && o.vehicleLines.find(x => x.id === lineId);
+        if (!l) return;
+        l.odeme.planlar = l.odeme.planlar.filter(x => x.id !== itemId);
+        markPlanDirty(orderId, lineId);
+        if (typeof render === 'function') render();
+      };
+    }
+  }
+
+  // Ödeme planı/ödemeler: frontend bunları bellekte tutuyordu; API'de ödeme
+  // (gerçekleşen) ayrı endpoint. Plan (planlanan) ise sipariş güncellemesiyle.
+  function wirePayments() {
+    // Gerçekleşen ödeme ekle
+    if (typeof addOdemeItem === 'function') {
+      const orig = addOdemeItem;
+      addOdemeItem = function (orderId, lineId) {
+        // Sadece UI'da boş satır ekler; asıl kayıt updateOdemeItem'da tutar girilince olur.
+        orig(orderId, lineId);
+      };
+    }
+    if (typeof updateOdemeItem === 'function') {
+      updateOdemeItem = async function (orderId, lineId, itemId, field, value) {
+        try {
+          const o = state.orders.find(x => x.id === orderId);
+          const l = o && o.vehicleLines.find(x => x.id === lineId);
+          const item = l && l.odeme.odemeler.find(x => x.id === itemId);
+          if (!item) return;
+          item[field] = (field === 'tutar') ? (parseFloat(value) || 0) : value;
+          // tarih + tutar dolduysa API'ye kaydet
+          if (item.tarih && item.tutar > 0 && !item._saved) {
+            const res = await Api.addPayment(orderId, lineId, { tarih: item.tarih, tutar: item.tutar });
+            item.id = res.id; item._saved = true;
+          }
+          if (typeof render === 'function') render();
+        } catch (e) { console.error('updateOdemeItem hata:', e); toast('Ödeme kaydedilemedi: ' + (e.message || '')); }
+      };
+    }
+    if (typeof removeOdemeItem === 'function') {
+      removeOdemeItem = async function (orderId, lineId, itemId) {
+        try {
+          const o = state.orders.find(x => x.id === orderId);
+          const l = o && o.vehicleLines.find(x => x.id === lineId);
+          const item = l && l.odeme.odemeler.find(x => x.id === itemId);
+          if (item && item._saved !== false && typeof item.id === 'number') {
+            await Api.deletePayment(orderId, lineId, item.id);
+          }
+          if (l) l.odeme.odemeler = l.odeme.odemeler.filter(x => x.id !== itemId);
+          if (typeof render === 'function') render();
+        } catch (e) { console.error('removeOdemeItem hata:', e); toast('Silinemedi: ' + (e.message || '')); }
+      };
+    }
+    // Plan öğeleri: sipariş güncelleme kapsamında; şimdilik yerelde tutulur,
+    // sipariş kaydında API'ye gider. (İleride ayrı wire edilebilir.)
+  }
+
+  function wireMasters() {
+    if (typeof addMasterItem === 'function') {
+      addMasterItem = async function (type, value) {
+        // Bos kontrolu (orijinaldeki gibi) - bos deger API'ye gitmesin
+        value = String(value || '').trim();
+        if (!value) return;
+        // Zaten varsa tekrar ekleme (buyuk/kucuk harf duyarsiz, Turkce)
+        const exists = masters[type].some(v => v.toLocaleLowerCase('tr-TR') === value.toLocaleLowerCase('tr-TR'));
+        if (exists) {
+          // Sadece dropdown'lari yenile, API'ye gitme
+          if (typeof refreshOrderFormSelects === 'function') refreshOrderFormSelects();
+          return;
+        }
+        try {
+          const tur = ({ customers: 'customers', suppliers: 'suppliers', brands: 'brands' })[type] || type;
+          await Api.createDefinition(tur, value);
+          masters[type].push(value);
+          if (typeof sortMasters === 'function') sortMasters();
+          // Tanimlar listesini VE siparis formu dropdown'larini yenile
+          if (typeof renderDefinitionLists === 'function') renderDefinitionLists();
+          if (typeof refreshOrderFormSelects === 'function') refreshOrderFormSelects();
+        } catch (e) { console.error('addMasterItem hata:', e); if(typeof toast==='function') toast('Eklenemedi: ' + (e.message || '')); }
+      };
+    }
+    if (typeof removeMasterItem === 'function') {
+      removeMasterItem = async function (type, value) {
+        // API silme id ister; masters sadece ad tutuyor. İd eşlemesi için
+        // active listeyi çekip ad->id bul.
+        try {
+          const tur = type;
+          const list = await Api.listDefinitions(tur);
+          const found = (list || []).find(x => x.ad === value);
+          if (found) await Api.deleteDefinition(tur, found.id);
+          masters[type] = masters[type].filter(x => x !== value);
+          if (typeof renderDefinitionLists === 'function') renderDefinitionLists();
+          if (typeof refreshOrderFormSelects === 'function') refreshOrderFormSelects();
+        } catch (e) { console.error('removeMasterItem hata:', e); if(typeof toast==='function') toast('Silinemedi: ' + (e.message || '')); }
+      };
+    }
+  }
+
+  // --- Başlat: ana script'in init'i bitince global'ler hazır olur ---
+  // Ana script IIFE ile hemen çalışıyor. DOMContentLoaded'da ana script zaten
+  // parse edilmiş olur; setTimeout(0) ile init()'in ardına geçiyoruz.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(installOverrides, 0));
+  } else {
+    setTimeout(installOverrides, 0);
+  }
+})();
+
+</script>
+</body>
+</html>

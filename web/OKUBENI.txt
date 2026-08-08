@@ -1,0 +1,3 @@
+NOT: web/ icinde mevcut prototip HTML var. IIS'te window.storage CALISMAZ;
+Faz 3'te bu HTML fetch tabanli api.js ile API'ye baglanacak. Su an API hazir,
+frontend'in baglanmasi ayri bir adim (KURULUM.md ADIM 1 sonrasi).
