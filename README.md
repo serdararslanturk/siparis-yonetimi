@@ -125,3 +125,5 @@ degisiklikleri sizde olur ve cakisma yasanmaz.
 - bin/, obj/, publish/, keys/, logs/ git'e girmez (.gitignore).
 - Veritabani degisiklikleri MIGRATION olarak eklenir (04, 05 gibi), 01-schema.sql sadece sifirdan kurulum icin.
 - SQL scriptleri -I bayragi ile calistirilir (QUOTED_IDENTIFIER geregi).
+
+Test: GitHub akışı çalışıyor.
