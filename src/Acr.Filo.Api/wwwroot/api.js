@@ -163,7 +163,7 @@ const Api = (() => {
 
   // --- DEFINITIONS ---
   function listDefinitions(tur) { return request('GET', '/api/definitions/' + tur + '/active'); }
-  function createDefinition(tur, ad) { return request('POST', '/api/definitions/' + tur, { ad }); }
+  function createDefinition(tur, ad, extra) { return request('POST', '/api/definitions/' + tur, Object.assign({ ad }, extra || {})); }
   function updateDefinition(tur, id, payload) { return request('PUT', `/api/definitions/${tur}/${id}`, payload); }
   function deleteDefinition(tur, id) { return request('DELETE', `/api/definitions/${tur}/${id}`); }
 

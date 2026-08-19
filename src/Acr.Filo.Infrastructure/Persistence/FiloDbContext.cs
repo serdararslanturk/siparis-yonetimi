@@ -24,6 +24,7 @@ public class FiloDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<Brand> Brands => Set<Brand>();
+    public DbSet<Temsilci> Temsilciler => Set<Temsilci>();
 
     // Sipariş
     public DbSet<FleetOrder> FleetOrders => Set<FleetOrder>();

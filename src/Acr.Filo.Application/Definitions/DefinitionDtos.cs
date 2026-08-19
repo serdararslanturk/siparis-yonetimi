@@ -2,9 +2,12 @@ using Acr.Filo.Application.Common;
 
 namespace Acr.Filo.Application.Definitions;
 
-public sealed record DefinitionDto(int Id, string Ad, bool IsActive, byte[] RowVersion);
-public sealed record CreateDefinitionRequest(string Ad);
-public sealed record UpdateDefinitionRequest(string Ad, bool IsActive, byte[] RowVersion);
+// VadeGun/TemsilciId/TemsilciAd yalnızca tur="customers" için doludur; diğer türlerde null.
+public sealed record DefinitionDto(int Id, string Ad, bool IsActive, byte[] RowVersion,
+    int? VadeGun = null, int? TemsilciId = null, string? TemsilciAd = null);
+public sealed record CreateDefinitionRequest(string Ad, int? VadeGun = null, int? TemsilciId = null);
+public sealed record UpdateDefinitionRequest(string Ad, bool IsActive, byte[] RowVersion,
+    int? VadeGun = null, int? TemsilciId = null);
 
 public interface IDefinitionService
 {

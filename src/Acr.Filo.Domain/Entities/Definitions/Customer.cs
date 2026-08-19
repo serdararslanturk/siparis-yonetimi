@@ -17,5 +17,12 @@ public class Customer : ConcurrentAuditableEntity, ISoftDeletable
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; }
 
+    /// <summary>Ödeme vadesi (gün). Örn. 45 = 45 gün vade. Boş olabilir.</summary>
+    public int? VadeGun { get; set; }
+
+    /// <summary>Müşteri temsilcisi (dbo.Temsilciler FK). Boş olabilir.</summary>
+    public int? TemsilciId { get; set; }
+    public Temsilci? Temsilci { get; set; }
+
     public ICollection<FleetOrder> Orders { get; set; } = new List<FleetOrder>();
 }

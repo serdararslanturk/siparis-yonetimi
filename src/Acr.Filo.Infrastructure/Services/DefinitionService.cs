@@ -13,16 +13,17 @@ public sealed class DefinitionService : IDefinitionService
     public DefinitionService(FiloDbContext db) => _db = db;
 
     // Tür -> tablo eşlemesi tek yerde. Geçersiz tür 404.
-    private static bool Valid(string tur) => tur is "customers" or "suppliers" or "brands";
+    private static bool Valid(string tur) => tur is "customers" or "suppliers" or "brands" or "temsilciler";
 
     public async Task<Result<PagedResult<DefinitionDto>>> ListAsync(string tur, PageQuery q, CancellationToken ct)
     {
         if (!Valid(tur)) return Result<PagedResult<DefinitionDto>>.Fail("Geçersiz tanım türü.", ResultCode.NotFound);
         var (items, total) = tur switch
         {
-            "customers" => await PageAsync(_db.Customers, c => new DefinitionDto(c.Id, c.Unvan, c.IsActive, c.RowVersion), q, ct),
-            "suppliers" => await PageAsync(_db.Suppliers, s => new DefinitionDto(s.Id, s.Unvan, s.IsActive, s.RowVersion), q, ct),
-            _           => await PageAsync(_db.Brands,    b => new DefinitionDto(b.Id, b.Ad,    b.IsActive, b.RowVersion), q, ct),
+            "customers"   => await PageAsync(_db.Customers, c => new DefinitionDto(c.Id, c.Unvan, c.IsActive, c.RowVersion, c.VadeGun, c.TemsilciId, c.Temsilci != null ? c.Temsilci.Ad : null), q, ct),
+            "suppliers"   => await PageAsync(_db.Suppliers, s => new DefinitionDto(s.Id, s.Unvan, s.IsActive, s.RowVersion, null, null, null), q, ct),
+            "temsilciler" => await PageAsync(_db.Temsilciler, t => new DefinitionDto(t.Id, t.Ad, t.IsActive, t.RowVersion, null, null, null), q, ct),
+            _             => await PageAsync(_db.Brands,    b => new DefinitionDto(b.Id, b.Ad,    b.IsActive, b.RowVersion, null, null, null), q, ct),
         };
         return Result<PagedResult<DefinitionDto>>.Success(new PagedResult<DefinitionDto>
         { Items = items, Total = total, Page = q.Page, PageSize = q.PageSize });
@@ -33,12 +34,14 @@ public sealed class DefinitionService : IDefinitionService
         if (!Valid(tur)) return Result<IReadOnlyList<DefinitionDto>>.Fail("Geçersiz tanım türü.", ResultCode.NotFound);
         IReadOnlyList<DefinitionDto> list = tur switch
         {
-            "customers" => await _db.Customers.Where(c => c.IsActive).OrderBy(c => c.Unvan)
-                .Select(c => new DefinitionDto(c.Id, c.Unvan, c.IsActive, c.RowVersion)).ToListAsync(ct),
-            "suppliers" => await _db.Suppliers.Where(s => s.IsActive).OrderBy(s => s.Unvan)
-                .Select(s => new DefinitionDto(s.Id, s.Unvan, s.IsActive, s.RowVersion)).ToListAsync(ct),
-            _           => await _db.Brands.Where(b => b.IsActive).OrderBy(b => b.Ad)
-                .Select(b => new DefinitionDto(b.Id, b.Ad, b.IsActive, b.RowVersion)).ToListAsync(ct),
+            "customers"   => await _db.Customers.Where(c => c.IsActive).OrderBy(c => c.Unvan)
+                .Select(c => new DefinitionDto(c.Id, c.Unvan, c.IsActive, c.RowVersion, c.VadeGun, c.TemsilciId, c.Temsilci != null ? c.Temsilci.Ad : null)).ToListAsync(ct),
+            "suppliers"   => await _db.Suppliers.Where(s => s.IsActive).OrderBy(s => s.Unvan)
+                .Select(s => new DefinitionDto(s.Id, s.Unvan, s.IsActive, s.RowVersion, null, null, null)).ToListAsync(ct),
+            "temsilciler" => await _db.Temsilciler.Where(t => t.IsActive).OrderBy(t => t.Ad)
+                .Select(t => new DefinitionDto(t.Id, t.Ad, t.IsActive, t.RowVersion, null, null, null)).ToListAsync(ct),
+            _             => await _db.Brands.Where(b => b.IsActive).OrderBy(b => b.Ad)
+                .Select(b => new DefinitionDto(b.Id, b.Ad, b.IsActive, b.RowVersion, null, null, null)).ToListAsync(ct),
         };
         return Result<IReadOnlyList<DefinitionDto>>.Success(list);
     }
@@ -51,8 +54,14 @@ public sealed class DefinitionService : IDefinitionService
         try
         {
             DefinitionDto dto;
-            if (tur == "customers") { var e = new Customer { Unvan = ad }; _db.Customers.Add(e); await _db.SaveChangesAsync(ct); dto = new(e.Id, e.Unvan, e.IsActive, e.RowVersion); }
+            if (tur == "customers")
+            {
+                var e = new Customer { Unvan = ad, VadeGun = req.VadeGun, TemsilciId = req.TemsilciId };
+                _db.Customers.Add(e); await _db.SaveChangesAsync(ct);
+                dto = new(e.Id, e.Unvan, e.IsActive, e.RowVersion, e.VadeGun, e.TemsilciId, await TemsilciAdAsync(e.TemsilciId, ct));
+            }
             else if (tur == "suppliers") { var e = new Supplier { Unvan = ad }; _db.Suppliers.Add(e); await _db.SaveChangesAsync(ct); dto = new(e.Id, e.Unvan, e.IsActive, e.RowVersion); }
+            else if (tur == "temsilciler") { var e = new Temsilci { Ad = ad }; _db.Temsilciler.Add(e); await _db.SaveChangesAsync(ct); dto = new(e.Id, e.Ad, e.IsActive, e.RowVersion); }
             else { var e = new Brand { Ad = ad }; _db.Brands.Add(e); await _db.SaveChangesAsync(ct); dto = new(e.Id, e.Ad, e.IsActive, e.RowVersion); }
             return Result<DefinitionDto>.Success(dto);
         }
@@ -73,10 +82,10 @@ public sealed class DefinitionService : IDefinitionService
             {
                 var e = await _db.Customers.FirstOrDefaultAsync(x => x.Id == id, ct);
                 if (e is null) return NotFound();
-                e.Unvan = ad; e.IsActive = req.IsActive;
+                e.Unvan = ad; e.IsActive = req.IsActive; e.VadeGun = req.VadeGun; e.TemsilciId = req.TemsilciId;
                 _db.Entry(e).Property(x => x.RowVersion).OriginalValue = req.RowVersion;
                 await _db.SaveChangesAsync(ct);
-                return Result<DefinitionDto>.Success(new(e.Id, e.Unvan, e.IsActive, e.RowVersion));
+                return Result<DefinitionDto>.Success(new(e.Id, e.Unvan, e.IsActive, e.RowVersion, e.VadeGun, e.TemsilciId, await TemsilciAdAsync(e.TemsilciId, ct)));
             }
             if (tur == "suppliers")
             {
@@ -86,6 +95,15 @@ public sealed class DefinitionService : IDefinitionService
                 _db.Entry(e).Property(x => x.RowVersion).OriginalValue = req.RowVersion;
                 await _db.SaveChangesAsync(ct);
                 return Result<DefinitionDto>.Success(new(e.Id, e.Unvan, e.IsActive, e.RowVersion));
+            }
+            if (tur == "temsilciler")
+            {
+                var e = await _db.Temsilciler.FirstOrDefaultAsync(x => x.Id == id, ct);
+                if (e is null) return NotFound();
+                e.Ad = ad; e.IsActive = req.IsActive;
+                _db.Entry(e).Property(x => x.RowVersion).OriginalValue = req.RowVersion;
+                await _db.SaveChangesAsync(ct);
+                return Result<DefinitionDto>.Success(new(e.Id, e.Ad, e.IsActive, e.RowVersion));
             }
             {
                 var e = await _db.Brands.FirstOrDefaultAsync(x => x.Id == id, ct);
@@ -110,15 +128,21 @@ public sealed class DefinitionService : IDefinitionService
         // Soft-delete. Kullanımdaki tanım FK yüzünden silinemez -> yalnız pasifleştirilir.
         ISoftDeletable? e = tur switch
         {
-            "customers" => await _db.Customers.FirstOrDefaultAsync(x => x.Id == id, ct),
-            "suppliers" => await _db.Suppliers.FirstOrDefaultAsync(x => x.Id == id, ct),
-            _           => await _db.Brands.FirstOrDefaultAsync(x => x.Id == id, ct),
+            "customers"   => await _db.Customers.FirstOrDefaultAsync(x => x.Id == id, ct),
+            "suppliers"   => await _db.Suppliers.FirstOrDefaultAsync(x => x.Id == id, ct),
+            "temsilciler" => await _db.Temsilciler.FirstOrDefaultAsync(x => x.Id == id, ct),
+            _             => await _db.Brands.FirstOrDefaultAsync(x => x.Id == id, ct),
         };
         if (e is null) return Result.Fail("Kayıt bulunamadı.", ResultCode.NotFound);
         e.IsDeleted = true;
         await _db.SaveChangesAsync(ct);
         return Result.Success();
     }
+
+    // Müşteri DTO'su için temsilci adını getirir (TemsilciId boşsa null).
+    private async Task<string?> TemsilciAdAsync(int? temsilciId, CancellationToken ct)
+        => temsilciId is null ? null
+           : await _db.Temsilciler.Where(t => t.Id == temsilciId).Select(t => t.Ad).FirstOrDefaultAsync(ct);
 
     private static async Task<(List<DefinitionDto>, int)> PageAsync<TEntity>(
         IQueryable<TEntity> set, System.Linq.Expressions.Expression<Func<TEntity, DefinitionDto>> map,
